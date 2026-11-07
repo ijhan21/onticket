@@ -1,0 +1,11 @@
+{
+  "jev-quality-gate": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "./scripts/jev-stop-hook.sh",
+        "timeout": 60
+      }
+    ]
+  }
+}
