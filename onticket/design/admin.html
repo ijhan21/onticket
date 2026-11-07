@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S07 공연 현황 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<div class="proto-strip" id="strip"></div>
+
+<main class="screen admin" aria-label="S07 공연 현황" id="screen"></main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  if (P.requireAdmin()) {
+    const screen = document.getElementById('screen');
+    let state = '기본';
+    const saved = P.param('saved') === '1';
+
+    function render() {
+      let body;
+      if (state === '로딩') {
+        body = '<div aria-busy="true" class="grades"><div class="skel-line"></div><div class="skel-line"></div><div class="skel-line w2"></div><div class="skel-line"></div></div>';
+      } else if (state === '불러오기 실패') {
+        body = `<div class="notice"><p class="msg error" role="alert">${P.ICON.alert}<span>현황을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.</span></p><button class="btn" type="button" id="retry">다시 시도</button></div>`;
+      } else {
+        const evs = state === '공연 없음' ? [] : P.events().sort((a, b) => a.시작일시.localeCompare(b.시작일시));
+        body = !evs.length
+          ? '<div class="notice"><p>등록된 공연이 없어요. 공연을 등록해 주세요.</p></div>'
+          : `<div class="table-wrap"><table class="table">
+              <thead><tr><th>제목</th><th>시작일시</th><th>장소</th><th>판매상태</th><th class="r">판매 수량</th><th class="r">입금액</th><th></th></tr></thead>
+              <tbody>${evs.map(e => { const s = P.stats(e.event_id); return `
+                <tr>
+                  <td class="strong">${P.esc(e.제목)}</td>
+                  <td class="num">${P.fmtDate(e.시작일시)}</td>
+                  <td>${P.esc(e.장소)}</td>
+                  <td>${P.esc(e.판매상태)}</td>
+                  <td class="r num">${s.qty.toLocaleString('ko-KR')}장</td>
+                  <td class="r num">${P.won(s.amount)}</td>
+                  <td><div class="actions">
+                    <a class="btn btn-small" href="admin-edit.html?id=${e.event_id}">수정하기</a>
+                    <a class="btn btn-small" href="admin-checkin.html?id=${e.event_id}">입장 확인하기</a>
+                  </div></td>
+                </tr>`; }).join('')}</tbody>
+            </table></div>`;
+      }
+      screen.innerHTML = P.adminHeader() + `
+        <div class="body">
+          ${saved && state === '기본' ? `<p class="msg ok" role="status">${P.ICON.check}<span>저장했어요.</span></p>` : ''}
+          <div class="toolbar"><a class="btn" href="admin-edit.html">공연 등록하기</a></div>
+          ${body}
+        </div>`;
+      P.bindLogout(screen);
+      const retry = document.getElementById('retry');
+      if (retry) retry.onclick = () => { state = '기본'; renderStrip(); render(); };
+    }
+
+    function renderStrip() {
+      const s = (text) => ({ text, pressed: state === text, onClick: () => { state = text; renderStrip(); render(); } });
+      P.strip(document.getElementById('strip'), 'S07 공연 현황 · 판매 수량·입금액은 orders.csv와 이 프로토타입에서 낸 주문 중 결제완료·입장완료만 센다', [
+        { label: '상태', buttons: [s('기본'), s('공연 없음'), s('로딩'), s('불러오기 실패')] },
+        { label: '그 밖', buttons: [
+          { text: '비밀번호 확인 풀림', onClick: () => { P.setAdmin(false); P.requireAdmin(); } },
+          { text: 'S01 고객 서비스', href: 'home.html' },
+          P.resetButton(),
+        ] },
+      ]);
+    }
+    renderStrip();
+    render();
+  }
+</script>
+</body>
+</html>

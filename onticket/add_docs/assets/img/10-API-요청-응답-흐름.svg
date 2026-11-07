@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 420" font-family="Pretendard, sans-serif">
+  <rect width="840" height="420" fill="#ffffff"/>
+  <text x="40" y="40" font-size="19" font-weight="700" fill="#0f1419">API 요청과 응답 — 온티켓 예매 처리 과정</text>
+  <text x="40" y="62" font-size="13" fill="#5b6472">화면이 요청을 보내면 서버가 검증·계산하고 DB에 저장한 뒤 결과를 돌려준다</text>
+
+  <!-- 세 기둥 -->
+  <g>
+    <rect x="50" y="96" width="200" height="60" rx="10" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="150" y="122" font-size="15" font-weight="700" fill="#0f1419" text-anchor="middle">프론트엔드 (화면)</text>
+    <text x="150" y="142" font-size="11.5" fill="#5b6472" text-anchor="middle">브라우저 · 화면 표시</text>
+
+    <rect x="320" y="96" width="200" height="60" rx="10" fill="#fff" stroke="#c2410c" stroke-width="2"/>
+    <text x="420" y="122" font-size="15" font-weight="700" fill="#c2410c" text-anchor="middle">API 서버</text>
+    <text x="420" y="142" font-size="11.5" fill="#5b6472" text-anchor="middle">요청 검증 · 금액 계산</text>
+
+    <rect x="590" y="96" width="200" height="60" rx="10" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="690" y="122" font-size="15" font-weight="700" fill="#0f1419" text-anchor="middle">데이터베이스</text>
+    <text x="690" y="142" font-size="11.5" fill="#5b6472" text-anchor="middle">저장 · 조회</text>
+  </g>
+
+  <!-- 흐름 1: 요청 -->
+  <line x1="250" y1="196" x2="316" y2="196" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#a4)"/>
+  <text x="150" y="192" font-size="12.5" font-weight="600" fill="#0f1419">1. 예매 요청</text>
+  <text x="150" y="209" font-size="11" fill="#5b6472" font-family="monospace">POST /orders</text>
+  <text x="283" y="188" font-size="10.5" fill="#48515e" text-anchor="middle">JSON</text>
+
+  <!-- 흐름 2: 서버가 DB에 -->
+  <line x1="520" y1="196" x2="586" y2="196" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#a4)"/>
+  <text x="420" y="192" font-size="12.5" font-weight="600" fill="#0f1419">2. 잔여 수량 확인·차감</text>
+  <text x="420" y="209" font-size="11" fill="#5b6472">금액은 서버가 계산</text>
+
+  <!-- 흐름 3: DB 응답 -->
+  <line x1="586" y1="248" x2="524" y2="248" stroke="#b0b6be" stroke-width="1.6" marker-end="url(#a4b)"/>
+  <text x="640" y="244" font-size="11.5" fill="#5b6472" text-anchor="middle">3. 주문 저장 완료</text>
+
+  <!-- 흐름 4: 서버 응답 -->
+  <line x1="316" y1="248" x2="254" y2="248" stroke="#b0b6be" stroke-width="1.6" marker-end="url(#a4b)"/>
+  <text x="420" y="244" font-size="11.5" fill="#5b6472" text-anchor="middle">4. 201 + 주문번호·금액(결제대기)</text>
+
+  <!-- 화면 최종 -->
+  <text x="150" y="252" font-size="11.5" fill="#5b6472" text-anchor="middle">5. 결제 화면으로 이동</text>
+
+  <!-- 상태코드 박스 -->
+  <rect x="50" y="292" width="740" height="98" rx="10" fill="#fbf7f4" stroke="#e0cabd" stroke-width="1.2"/>
+  <text x="68" y="316" font-size="13" font-weight="700" fill="#c2410c">서버의 응답 상태 코드 — 처리 결과를 숫자로 알린다</text>
+  <g font-size="12" fill="#0f1419">
+    <text x="68" y="342"><tspan font-weight="700" fill="#0f1419">201</tspan>  주문 생성 완료</text>
+    <text x="230" y="342"><tspan font-weight="700">400</tspan>  잘못된 요청(수량 허용 범위 밖)</text>
+    <text x="470" y="342"><tspan font-weight="700">404</tspan>  행사를 찾을 수 없음</text>
+    <text x="68" y="366"><tspan font-weight="700" fill="#c2410c">409</tspan>  잔여 수량 부족(주문 거절)</text>
+    <text x="290" y="366"><tspan font-weight="700">500</tspan>  서버 내부 오류</text>
+  </g>
+  <text x="640" y="366" font-size="11" fill="#c2410c" text-anchor="middle" font-style="italic">재고 부족 시 409로 응답</text>
+
+  <defs>
+    <marker id="a4" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 Z" fill="#8a8f98"/></marker>
+    <marker id="a4b" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 Z" fill="#b0b6be"/></marker>
+  </defs>
+</svg>

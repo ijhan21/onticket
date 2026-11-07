@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S02 공연 상세·예매 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<div class="proto-strip" id="strip"></div>
+
+<main class="screen" aria-label="S02 공연 상세·예매" id="screen"></main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  const screen = document.getElementById('screen');
+  const eid = P.param('id') || 'EV001';
+  const st = {
+    sel: P.param('tt') || null,
+    qty: parseInt(P.param('qty') || '1', 10),
+    email: P.param('email') || '',
+    touched: false,
+    error: '',          // 서버 거절 문구
+    forced: '',         // 서버가 판매중이 아니라고 거절했을 때: '판매종료' | '매진'
+    loading: '',        // '공연' | '결제'
+    nextResult: '서버 판정대로',
+  };
+
+  function emailError() {
+    if (!st.email) return '이메일을 입력해 주세요.';
+    // D3: @가 하나, 그 앞뒤에 글자, @ 뒤에 점
+    if (!/^[^@\s]+@[^@\s]+$/.test(st.email) || !st.email.split('@')[1].includes('.') ) return '이메일 형식이 맞지 않아요. 다시 확인해 주세요.';
+    return '';
+  }
+
+  function infoHtml(e) {
+    return `
+      <div class="row">
+        <div class="poster large" aria-hidden="true">${P.esc(e.제목)}</div>
+      </div>
+      <div class="info">
+        <h1 class="h-title">${P.esc(e.제목)}</h1>
+        <p class="meta">${P.esc(e.카테고리)}</p>
+        <p class="meta num">${P.fmtDate(e.시작일시)} ~ ${P.fmtDate(e.종료일시)}</p>
+        <p class="meta">${P.esc(e.장소)} · ${P.esc(e.도시)}</p>
+      </div>`;
+  }
+
+  function render() {
+    const head = P.customerHeader();
+    if (st.loading === '공연') {
+      screen.innerHTML = head + '<div class="body" aria-busy="true"><div class="skel"><div class="skel-poster"></div><div class="skel-lines"><div class="skel-line"></div><div class="skel-line w2"></div><div class="skel-line w3"></div></div></div><div class="skel-line"></div><div class="skel-line w2"></div></div>';
+      return;
+    }
+    const e = P.event(eid);
+    if (!e) {
+      screen.innerHTML = head + '<div class="body"><div class="notice"><p class="msg error">' + P.ICON.alert + '<span>공연을 찾을 수 없어요. 공연 목록에서 다시 골라 주세요.</span></p><a class="link" href="home.html">공연 목록 보기</a></div></div>';
+      return;
+    }
+    const status = st.forced || e.판매상태;
+    if (status === '판매종료' || status === '매진') {
+      const msg = status === '판매종료' ? '판매가 끝난 공연이에요. 다른 공연을 골라 주세요.' : '매진된 공연이에요. 다른 공연을 골라 주세요.';
+      screen.innerHTML = head + `<div class="body">${infoHtml(e)}<div class="notice"><p class="msg">${P.ICON.alert}<span>${msg}</span></p></div></div>`;
+      return;
+    }
+
+    const ts = P.typesOf(eid);
+    if (ts.length === 1 && !st.sel && ts[0].잔여수량 > 0) st.sel = ts[0].ticket_type_id; // D4
+    const t = st.sel ? P.type(st.sel) : null;
+    if (t && (t.event_id !== eid || t.잔여수량 === 0) && !st.error) st.sel = null;
+    const max = st.sel ? P.maxQty(st.sel) : 4;
+    if (st.qty > max && max > 0) st.qty = max;
+    if (st.qty < 1) st.qty = 1;
+    const eErr = emailError();
+    const canPay = !!st.sel && !eErr && st.loading !== '결제';
+
+    const grades = ts.map(g => {
+      const out = g.잔여수량 === 0;
+      return `<button type="button" class="grade" role="radio" aria-checked="${st.sel === g.ticket_type_id}" data-tt="${g.ticket_type_id}" ${out ? 'disabled' : ''}>
+        <span class="grade-left"><span class="strong">${P.esc(g.등급)}</span>
+          ${out ? '<span class="badge">매진</span>' : `<span class="caption muted num">남은 수량 ${g.잔여수량.toLocaleString('ko-KR')}</span>`}</span>
+        <span class="grade-right price">${P.won(g.가격)}</span>
+      </button>`;
+    }).join('');
+
+    screen.innerHTML = head + `
+      <div class="body">
+        ${infoHtml(e)}
+        ${st.error ? `<p class="msg error" role="alert">${P.ICON.alert}<span>${st.error}</span></p>` : ''}
+        <section class="field" aria-label="등급">
+          <div class="grades" role="radiogroup">${grades}</div>
+        </section>
+        <section class="field">
+          <span class="label">수량</span>
+          <div class="stepper">
+            <button type="button" class="step-btn" id="minus" aria-label="수량 빼기" ${st.qty <= 1 ? 'disabled' : ''}>${P.ICON.minus}</button>
+            <span class="step-val" aria-live="polite">${st.qty}</span>
+            <button type="button" class="step-btn" id="plus" aria-label="수량 더하기" ${st.qty >= max ? 'disabled' : ''}>${P.ICON.plus}</button>
+          </div>
+          ${st.sel && st.qty >= max ? '<p class="hint">한 번에 살 수 있는 만큼 골랐어요.</p>' : ''}
+        </section>
+        <section class="field">
+          <label class="label" for="email">이메일</label>
+          <input class="input ${st.touched && eErr ? 'invalid' : ''}" id="email" type="email" inputmode="email" autocomplete="email" placeholder="example@example.com" value="${P.esc(st.email)}">
+          ${st.touched && eErr ? `<p class="field-error" id="email-err">${eErr}</p>` : ''}
+          <p class="hint">주문번호와 이 이메일로 티켓을 다시 볼 수 있어요.</p>
+        </section>
+      </div>
+      <div class="bottom-bar">
+        ${st.sel ? `<div class="amount-row"><span class="label">결제금액</span><span class="amount">${P.won(P.quote(st.sel, st.qty))}</span></div>` : ''}
+        <button type="button" class="btn btn-book" id="pay" ${canPay ? '' : 'disabled'}>
+          ${st.loading === '결제' ? '<span class="spinner" aria-label="기다리는 중"></span>' : '결제하기'}
+        </button>
+      </div>`;
+
+    screen.querySelectorAll('.grade').forEach(b => b.onclick = () => { st.sel = b.dataset.tt; st.error = ''; render(); });
+    const minus = document.getElementById('minus'), plus = document.getElementById('plus');
+    minus.onclick = () => { st.qty -= 1; render(); };
+    plus.onclick = () => { st.qty += 1; render(); };
+    const em = document.getElementById('email');
+    em.oninput = () => {
+      st.email = em.value.trim();
+      // 입력 중에는 칸만 다시 판단하고 화면 전체를 다시 그리지 않는다
+      const err = emailError();
+      document.getElementById('pay').disabled = !(st.sel && !err);
+      if (st.touched) {
+        em.classList.toggle('invalid', !!err);
+        let p = document.getElementById('email-err');
+        if (err && !p) { p = document.createElement('p'); p.className = 'field-error'; p.id = 'email-err'; em.after(p); }
+        if (p) { if (err) p.textContent = err; else p.remove(); }
+      }
+    };
+    em.onblur = () => { st.touched = true; em.oninput(); };
+    document.getElementById('pay').onclick = pay;
+  }
+
+  function pay() {
+    st.loading = '결제'; st.error = ''; render();
+    setTimeout(() => {
+      st.loading = '';
+      let r;
+      if (st.nextResult === '수량 부족으로 거절') r = { error: '수량부족' };
+      else if (st.nextResult === '등급 불일치로 거절') r = { error: '등급불일치' };
+      else if (st.nextResult === '판매 끝남으로 거절') r = { error: '판매끝남', 판매상태: '판매종료' };
+      else r = P.createOrder({ eid, tt: st.sel, qty: st.qty, email: st.email });
+
+      if (r.order) { location.href = 'pay.html?order=' + encodeURIComponent(r.order.order_id); return; }
+      if (r.error === '수량부족') st.error = '남은 수량이 부족해 예매하지 못했어요. 수량을 줄이거나 다른 등급을 골라 주세요.';
+      if (r.error === '등급불일치') { st.error = '이 공연의 등급이 아니에요. 등급을 다시 골라 주세요.'; st.sel = null; }
+      if (r.error === '판매끝남') st.forced = r.판매상태 === '매진' ? '매진' : '판매종료';
+      st.nextResult = '서버 판정대로';
+      renderStrip(); render();
+    }, 700);
+  }
+
+  function renderStrip() {
+    const r = (text) => ({ text, pressed: st.nextResult === text, onClick: () => { st.nextResult = text; renderStrip(); } });
+    P.strip(document.getElementById('strip'), 'S02 공연 상세·예매 · 등급·수량·이메일을 넣고 결제하기를 누르면 결제대행 결제창(흉내)으로 간다', [
+      { label: '결제하기 다음 결과', buttons: [r('서버 판정대로'), r('수량 부족으로 거절'), r('등급 불일치로 거절'), r('판매 끝남으로 거절')] },
+      { label: '상태', buttons: [
+        { text: '로딩 보기', onClick: () => { st.loading = '공연'; render(); setTimeout(() => { st.loading = ''; render(); }, 1500); } },
+        { text: '이메일 틀린 값 넣기', onClick: () => { st.email = 'example.example.com'; st.touched = true; render(); } },
+        { text: '이메일 비우기', onClick: () => { st.email = ''; st.touched = true; render(); } },
+      ] },
+      { label: '다른 공연', buttons: [
+        { text: '등급 3개(유하늘 콘서트)', href: 'event.html?id=EV001' },
+        { text: '등급 4개·A석 매진(달빛 극장)', href: 'event.html?id=EV002' },
+        { text: '등급 1개(스탠드업 코미디)', href: 'event.html?id=EV007' },
+        { text: '잔여 2·1(피아노 리사이틀)', href: 'event.html?id=EV005' },
+        { text: '모든 등급 매진(클래식 갈라)', href: 'event.html?id=EV011' },
+        { text: '판매상태 매진(팬미팅)', href: 'event.html?id=EV010' },
+        { text: '판매종료(골목 라이브)', href: 'event.html?id=EV004' },
+        { text: '없는 공연', href: 'event.html?id=EV999' },
+        P.resetButton(),
+      ] },
+    ]);
+  }
+  renderStrip();
+  render();
+</script>
+</body>
+</html>

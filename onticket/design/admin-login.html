@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S06 운영 비밀번호 확인 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<div class="proto-strip" id="strip"></div>
+
+<main class="screen" aria-label="S06 운영 비밀번호 확인">
+  <header class="top">
+    <div class="top-left"><span class="wordmark">온티켓<span class="wordmark-dot">.</span></span><span class="top-sub">운영 서비스</span></div>
+  </header>
+  <form class="body" id="form" novalidate>
+    <div class="field">
+      <label class="label" for="pw">운영팀 비밀번호</label>
+      <div class="input-wrap">
+        <input class="input" id="pw" type="password" autocomplete="current-password">
+        <button class="input-icon" type="button" id="eye" aria-label="비밀번호 보기"></button>
+      </div>
+      <p class="field-error" id="err" hidden>비밀번호가 맞지 않아요. 다시 입력해 주세요.</p>
+    </div>
+    <button class="btn" type="submit" id="go" disabled>들어가기</button>
+  </form>
+</main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  const pw = document.getElementById('pw'), go = document.getElementById('go'), err = document.getElementById('err'), eye = document.getElementById('eye');
+  let nextResult = '맞음';
+  eye.innerHTML = P.ICON.eye;
+  eye.onclick = () => {
+    const show = pw.type === 'password';
+    pw.type = show ? 'text' : 'password';
+    eye.innerHTML = show ? P.ICON.eyeOff : P.ICON.eye;
+    eye.setAttribute('aria-label', show ? '비밀번호 가리기' : '비밀번호 보기');
+  };
+  pw.oninput = () => { go.disabled = !pw.value; };
+  document.getElementById('form').onsubmit = (ev) => {
+    ev.preventDefault();
+    if (!pw.value) return;
+    go.disabled = true; go.innerHTML = '<span class="spinner" aria-label="기다리는 중"></span>';
+    setTimeout(() => {
+      go.textContent = '들어가기';
+      if (nextResult === '맞음') {
+        P.setAdmin(true);
+        location.href = P.param('next') || 'admin.html';
+      } else {
+        pw.value = ''; go.disabled = true; err.hidden = false; pw.classList.add('invalid'); pw.focus();
+      }
+    }, 600);
+  };
+
+  function renderStrip() {
+    const r = (text) => ({ text, pressed: nextResult === text, onClick: () => { nextResult = text; renderStrip(); } });
+    P.strip(document.getElementById('strip'), 'S06 운영 비밀번호 확인 · 아무 값이나 넣고 들어가기를 누른다. 판정은 아래에서 고른다. 다른 기기에서 같은 비밀번호로 들어와도 이 화면과 같다(AC40)', [
+      { label: '서버 판정', buttons: [r('맞음'), r('틀림')] },
+      { label: '비밀번호 없이 들어가 보기', buttons: [
+        { text: 'S07 공연 현황 주소', onClick: () => { P.setAdmin(false); location.href = 'admin.html'; } },
+        { text: 'S09 입장 확인 주소', onClick: () => { P.setAdmin(false); location.href = 'admin-checkin.html?id=EV001'; } },
+        { text: 'S01 고객 서비스', href: 'home.html' },
+      ] },
+    ]);
+  }
+  renderStrip();
+</script>
+</body>
+</html>

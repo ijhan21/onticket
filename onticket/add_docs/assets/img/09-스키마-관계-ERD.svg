@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 470" font-family="Pretendard, sans-serif">
+  <rect width="840" height="470" fill="#ffffff"/>
+  <text x="40" y="40" font-size="19" font-weight="700" fill="#0f1419">온티켓 데이터베이스 스키마 — 다섯 테이블의 관계</text>
+  <text x="40" y="62" font-size="13" fill="#5b6472">화살표는 외래 키 관계를 나타낸다. 항목은 한글로 표시했으며, 영문 컬럼명은 docs/ERD.md에서 확정한다</text>
+
+  <!-- events -->
+  <g>
+    <rect x="60" y="96" width="200" height="118" rx="9" fill="#fff" stroke="#c2410c" stroke-width="1.8"/>
+    <rect x="60" y="96" width="200" height="26" rx="9" fill="#fbf7f4"/>
+    <rect x="60" y="113" width="200" height="9" fill="#fbf7f4"/>
+    <text x="72" y="114" font-size="13" font-weight="700" fill="#c2410c">events (행사)</text>
+    <g font-size="11.5" fill="#0f1419">
+      <text x="72" y="140" font-weight="700">event_id (PK)</text>
+      <text x="72" y="158">제목 · 카테고리</text>
+      <text x="72" y="176">장소 · 일시</text>
+      <text x="72" y="194">상태 · 주최사</text>
+    </g>
+  </g>
+
+  <!-- ticket_types -->
+  <g>
+    <rect x="60" y="286" width="200" height="130" rx="9" fill="#fff" stroke="#c8ced6" stroke-width="1.5"/>
+    <rect x="60" y="286" width="200" height="26" rx="9" fill="#f2f4f6"/>
+    <rect x="60" y="303" width="200" height="9" fill="#f2f4f6"/>
+    <text x="72" y="304" font-size="13" font-weight="700" fill="#0f1419">ticket_types (티켓 등급)</text>
+    <g font-size="11.5" fill="#0f1419">
+      <text x="72" y="330" font-weight="700">ticket_type_id (PK)</text>
+      <text x="72" y="348" fill="#c2410c">event_id (FK)</text>
+      <text x="72" y="366">등급 · 가격</text>
+      <text x="72" y="384">총수량 · 판매수량 (잔여 수량 계산)</text>
+      <text x="72" y="405" fill="#5b6472" font-style="italic" font-size="10.5">CHECK: 판매수량 ≤ 총수량</text>
+    </g>
+  </g>
+
+  <!-- users -->
+  <g>
+    <rect x="600" y="96" width="180" height="112" rx="9" fill="#fff" stroke="#c8ced6" stroke-width="1.5"/>
+    <rect x="600" y="96" width="180" height="26" rx="9" fill="#f2f4f6"/>
+    <rect x="600" y="113" width="180" height="9" fill="#f2f4f6"/>
+    <text x="612" y="114" font-size="13" font-weight="700" fill="#0f1419">users (회원)</text>
+    <g font-size="11.5" fill="#0f1419">
+      <text x="612" y="140" font-weight="700">user_id (PK)</text>
+      <text x="612" y="158">이름 · 이메일</text>
+      <text x="612" y="176">전화번호</text>
+      <text x="612" y="194">가입일</text>
+    </g>
+  </g>
+
+  <!-- orders -->
+  <g>
+    <rect x="330" y="240" width="210" height="150" rx="9" fill="#fff" stroke="#c2410c" stroke-width="1.8"/>
+    <rect x="330" y="240" width="210" height="26" rx="9" fill="#fbf7f4"/>
+    <rect x="330" y="257" width="210" height="9" fill="#fbf7f4"/>
+    <text x="342" y="258" font-size="13" font-weight="700" fill="#c2410c">orders (주문)</text>
+    <g font-size="11.5" fill="#0f1419">
+      <text x="342" y="284" font-weight="700">order_id (PK)</text>
+      <text x="342" y="302" fill="#c2410c">user_id (FK)</text>
+      <text x="342" y="320" fill="#c2410c">event_id · ticket_type_id (FK)</text>
+      <text x="342" y="338">구매자 이메일 · 수량 · 금액</text>
+      <text x="342" y="356">상태 · 주문 일시</text>
+      <text x="342" y="374" fill="#5b6472" font-style="italic" font-size="10.5">qr_code (UNIQUE)</text>
+    </g>
+  </g>
+
+  <!-- checkins -->
+  <g>
+    <rect x="600" y="286" width="180" height="130" rx="9" fill="#fff" stroke="#c8ced6" stroke-width="1.5"/>
+    <rect x="600" y="286" width="180" height="26" rx="9" fill="#f2f4f6"/>
+    <rect x="600" y="303" width="180" height="9" fill="#f2f4f6"/>
+    <text x="612" y="304" font-size="13" font-weight="700" fill="#0f1419">checkins (입장)</text>
+    <g font-size="11.5" fill="#0f1419">
+      <text x="612" y="330" font-weight="700">checkin_id (PK)</text>
+      <text x="612" y="348" fill="#c2410c">order_id (FK)</text>
+      <text x="612" y="366">qr_code · 게이트</text>
+      <text x="612" y="384">입장 일시</text>
+    </g>
+  </g>
+
+  <!-- 관계선 -->
+  <!-- events -> ticket_types -->
+  <line x1="160" y1="214" x2="160" y2="282" stroke="#c2410c" stroke-width="1.6" marker-end="url(#ae)"/>
+  <text x="170" y="252" font-size="10.5" fill="#c2410c">1:N</text>
+  <!-- ticket_types -> orders -->
+  <path d="M 260 340 L 326 320" fill="none" stroke="#c2410c" stroke-width="1.6" marker-end="url(#ae)"/>
+  <!-- users -> orders -->
+  <path d="M 600 168 Q 470 200 480 236" fill="none" stroke="#c2410c" stroke-width="1.6" marker-end="url(#ae)"/>
+  <!-- orders -> checkins -->
+  <path d="M 540 330 L 596 348" fill="none" stroke="#c2410c" stroke-width="1.6" marker-end="url(#ae)"/>
+
+  <text x="40" y="452" font-size="11.5" fill="#5b6472"><tspan font-weight="700">PK</tspan> 기본 키(행의 식별자)   ·   <tspan font-weight="700" fill="#c2410c">FK</tspan> 외래 키(다른 테이블 참조)   ·   화살표는 참조 대상 테이블을 가리킨다</text>
+
+  <defs>
+    <marker id="ae" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 Z" fill="#c2410c"/></marker>
+  </defs>
+</svg>

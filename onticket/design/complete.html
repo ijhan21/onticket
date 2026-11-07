@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S03 결제 완료 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<div class="proto-strip" id="strip"></div>
+
+<main class="screen" aria-label="S03 결제 완료" id="screen"></main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  const screen = document.getElementById('screen');
+  const id = P.param('order') || 'ORD-20260908-0001';
+  let showPending = false; // 승인된 주문으로도 '승인 확인 중' 모양을 볼 수 있게
+
+  function render() {
+    const o = P.order(id);
+    const head = P.customerHeader();
+    if (!o) { screen.innerHTML = head + '<div class="body"><p class="proto-meta">주문이 없다. S01에서 다시 예매한다.</p></div>'; return; }
+    if (o.상태 !== '결제완료' && o.상태 !== '입장완료' && o.상태 !== '승인대기') {
+      // AC29: 승인되지 않은 주문은 결제 완료 화면을 보여 주지 않는다
+      location.replace(`fail.html?reason=reject&eid=${o.event_id}&tt=${o.ticket_type_id}&qty=${o.수량}&email=${encodeURIComponent(o.email)}`);
+      return;
+    }
+    if (o.상태 === '승인대기' || showPending) {
+      screen.innerHTML = head + `
+        <div class="body">
+          <div class="msg"><span class="spinner" aria-hidden="true"></span><h1 class="h-title">결제를 확인하고 있어요</h1></div>
+          <dl class="dl"><dt>주문번호</dt><dd class="num strong">${P.esc(o.order_id)}</dd></dl>
+          <p class="muted">화면을 닫아도 괜찮아요. 잠시 뒤 티켓 조회에서 주문번호와 이메일로 확인해 주세요.</p>
+        </div>`;
+      return;
+    }
+    screen.innerHTML = head + `
+      <div class="body">
+        <h1 class="h-display">결제 완료</h1>
+        ${P.ticketHtml(o)}
+        <p class="hint">이 화면을 닫아도 주문번호와 이메일로 티켓을 다시 볼 수 있어요.</p>
+      </div>`;
+  }
+
+  function renderStrip() {
+    const o = P.order(id);
+    const pending = o && (o.상태 === '승인대기' || showPending);
+    P.strip(document.getElementById('strip'), 'S03 결제 완료 · ' + (pending ? '서버 승인을 기다리는 중이다' : '서버가 승인한 주문이다'), [
+      { label: '서버 승인', buttons: pending ? [
+        { text: '서버 승인 도착', onClick: () => { showPending = false; if (o.상태 === '승인대기') { const r = P.approve(id); if (!r.ok) { render(); return; } } renderStrip(); render(); } },
+        { text: '서버가 승인하지 않음', onClick: () => { if (o.상태 === '승인대기') P.cancel(id); location.href = `fail.html?reason=reject&eid=${o.event_id}&tt=${o.ticket_type_id}&qty=${o.수량}&email=${encodeURIComponent(o.email)}`; } },
+      ] : [
+        { text: '승인 확인 중 모양 보기', onClick: () => { showPending = true; renderStrip(); render(); } },
+      ] },
+      { label: '예시 주문(orders.csv)', buttons: [
+        { text: '수량 2장', href: 'complete.html?order=ORD-20260908-0001' },
+        { text: '수량 1장', href: 'complete.html?order=ORD-20260813-0002' },
+        { text: '수량 4장', href: 'complete.html?order=ORD-20260828-0018' },
+        { text: 'S05 티켓 조회', href: 'ticket.html' },
+        { text: 'S01 공연 목록', href: 'home.html' },
+      ] },
+    ]);
+  }
+  renderStrip();
+  render();
+</script>
+</body>
+</html>

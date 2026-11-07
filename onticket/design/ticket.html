@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S05 티켓 조회 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<div class="proto-strip" id="strip"></div>
+
+<main class="screen" aria-label="S05 티켓 조회">
+  <header class="top">
+    <a class="wordmark" href="home.html">온티켓<span class="wordmark-dot">.</span></a>
+    <a class="top-link" href="ticket.html">티켓 조회</a>
+  </header>
+  <div class="body">
+    <form class="notice" id="form" novalidate>
+      <div class="field" style="width: 100%">
+        <label class="label" for="oid">주문번호</label>
+        <input class="input num" id="oid" autocomplete="off" autocapitalize="characters" placeholder="ORD-20261106-0001">
+      </div>
+      <div class="field" style="width: 100%">
+        <label class="label" for="em">예매할 때 입력한 이메일</label>
+        <input class="input" id="em" type="email" inputmode="email" autocomplete="email">
+      </div>
+      <button class="btn" type="submit" id="go" disabled>티켓 보기</button>
+    </form>
+    <div id="result" aria-live="polite"></div>
+  </div>
+</main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  const oid = document.getElementById('oid'), em = document.getElementById('em');
+  const go = document.getElementById('go'), result = document.getElementById('result');
+  const sync = () => { go.disabled = !(oid.value.trim() && em.value.trim()); };
+  oid.oninput = sync; em.oninput = sync;
+
+  document.getElementById('form').onsubmit = (ev) => {
+    ev.preventDefault();
+    if (go.disabled) return;
+    // D13: 앞뒤 빈칸을 지우고 대문자로 바꿔 보낸다. 맞는지는 서버(흉내)가 판정한다.
+    const id = oid.value.trim().toUpperCase(); oid.value = id;
+    const email = em.value.trim();
+    go.disabled = true; go.innerHTML = '<span class="spinner" aria-label="기다리는 중"></span>';
+    result.innerHTML = '';
+    setTimeout(() => {
+      go.disabled = false; go.textContent = '티켓 보기';
+      const o = P.lookup(id, email);
+      if (!o) {
+        result.innerHTML = `<p class="msg error" role="alert">${P.ICON.alert}<span>주문번호와 이메일이 맞는 주문이 없어요. 두 값을 다시 확인해 주세요.</span></p>`;
+      } else if (o.상태 === '승인대기') {
+        result.innerHTML = `<p class="msg">${P.ICON.alert}<span>결제를 확인하고 있어요. 잠시 뒤 다시 조회해 주세요.</span></p>`;
+      } else if (o.상태 === '결제완료') {
+        result.innerHTML = P.ticketHtml(o);
+      } else if (o.상태 === '입장완료') {
+        const c = P.checkinOf(o.order_id);
+        result.innerHTML = P.ticketHtml(o, `<p class="msg ok">${P.ICON.check}<span>입장 확인됨 <span class="num">${c ? P.fmtDate(c.입장일시) : ''}</span></span></p>`);
+      } else {
+        result.innerHTML = `<p class="msg">${P.ICON.alert}<span>결제가 완료되지 않은 주문이에요. 공연 목록에서 다시 예매해 주세요.</span></p>`;
+      }
+    }, 600);
+  };
+
+  function fill(id, email) { oid.value = id; em.value = email; sync(); result.innerHTML = ''; }
+  function pendingDemo() {
+    const r = P.createOrder({ eid: 'EV001', tt: 'TT003', qty: 1, email: P.DEMO_EMAIL });
+    if (r.order) fill(r.order.order_id, P.DEMO_EMAIL);
+  }
+  const E = P.DEMO_EMAIL;
+  P.strip(document.getElementById('strip'), 'S05 티켓 조회 · 값을 채운 뒤 티켓 보기를 누른다. CSV 주문의 이메일은 모두 ' + E + '로 둔다', [
+    { label: '채우기', buttons: [
+      { text: '결제완료 주문 A', onClick: () => fill('ORD-20260908-0001', E) },
+      { text: '같은 이메일 주문 B', onClick: () => fill('ORD-20260813-0002', E) },
+      { text: '입장완료 주문', onClick: () => fill('ORD-20260830-0015', E) },
+      { text: '취소된 주문', onClick: () => fill('ORD-20260811-0012', E) },
+      { text: '이메일이 다름', onClick: () => fill('ORD-20260908-0001', 'other@example.com') },
+      { text: '주문번호가 다름', onClick: () => fill('ORD-20260908-9999', E) },
+      { text: '소문자·빈칸 섞인 주문번호', onClick: () => fill('  ord-20260908-0001 ', E) },
+      { text: '승인 대기 주문 만들기', onClick: pendingDemo },
+    ] },
+    { label: '바로 가기', buttons: [{ text: 'S01 공연 목록', href: 'home.html' }, P.resetButton()] },
+  ]);
+</script>
+</body>
+</html>

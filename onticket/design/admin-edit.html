@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S08 공연 등록·수정 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<div class="proto-strip" id="strip"></div>
+
+<main class="screen admin" aria-label="S08 공연 등록·수정" id="screen"></main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  if (P.requireAdmin()) {
+    const screen = document.getElementById('screen');
+    const id = P.param('id');
+    const e = id ? P.event(id) : null;
+    const toLocal = s => (s || '').replace(' ', 'T');
+    const fromLocal = s => (s || '').replace('T', ' ');
+    let f = e ? { 제목: e.제목, 카테고리: e.카테고리, 장소: e.장소, 도시: e.도시, 시작일시: e.시작일시, 종료일시: e.종료일시, 판매상태: e.판매상태 }
+              : { 제목: '', 카테고리: '', 장소: '', 도시: '', 시작일시: '', 종료일시: '', 판매상태: '판매종료' }; // D18: 새 공연은 판매종료로 골라 둔다
+    let rows = e ? P.typesOf(id).map(t => ({ ticket_type_id: t.ticket_type_id, 등급: t.등급, 가격: String(t.가격), 총수량: String(t.총수량), 판매수량: t.판매수량, 잔여수량: t.잔여수량 }))
+                 : [{ 등급: '', 가격: '', 총수량: '' }];
+    let errors = {}, saving = false, nextResult = '서버 판정대로';
+
+    const FIELDS = [['제목', 'text', 'wide'], ['카테고리', 'text'], ['장소', 'text'], ['도시', 'text'], ['판매상태', 'select'], ['시작일시', 'datetime-local'], ['종료일시', 'datetime-local']];
+
+    function fieldHtml([k, type, cls]) {
+      const err = errors[k] ? `<p class="field-error">${errors[k]}</p>` : '';
+      let input;
+      if (type === 'select') {
+        input = `<select class="input" data-f="${k}" id="f-${k}">${['판매중', '판매종료', '매진'].map(v => `<option ${f[k] === v ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
+      } else {
+        const val = type === 'datetime-local' ? toLocal(f[k]) : f[k];
+        input = `<input class="input ${errors[k] ? 'invalid' : ''}" type="${type}" data-f="${k}" id="f-${k}" value="${P.esc(val)}">`;
+      }
+      return `<div class="field ${cls || ''}"><label class="label" for="f-${k}">${k}</label>${input}${err}</div>`;
+    }
+
+    function rowHtml(r, i) {
+      const saved = !!r.ticket_type_id;
+      const cell = (k, type) => {
+        const err = errors[k + '-' + i];
+        return `<div class="field"><label class="label" for="r-${k}-${i}">${k}${k === '가격' ? '(원)' : ''}</label>
+          <input class="input num ${err ? 'invalid' : ''}" type="${type}" inputmode="${type === 'number' ? 'numeric' : 'text'}" data-r="${i}" data-k="${k}" id="r-${k}-${i}" value="${P.esc(r[k])}">
+          ${err ? `<p class="field-error">${err}</p>` : ''}</div>`;
+      };
+      const ro = (k, v) => `<div class="field"><label class="label" for="r-${k}-${i}">${k}</label><input class="input num" id="r-${k}-${i}" readonly value="${saved ? v : '-'}"></div>`;
+      return `<div class="grade-row">
+        ${cell('등급', 'text')}${cell('가격', 'number')}${cell('총수량', 'number')}
+        ${ro('판매수량', r.판매수량)}${ro('잔여수량', r.잔여수량)}
+        <div class="field"><span class="label">&nbsp;</span>${saved ? '' : `<button type="button" class="btn btn-small" data-del="${i}">줄 빼기</button>`}</div>
+      </div>`;
+    }
+
+    function render() {
+      screen.innerHTML = P.adminHeader() + `
+        <form class="body" id="form" novalidate>
+          <h1 class="h-title">${e ? '공연 수정' : '공연 등록'}</h1>
+          <div class="form-grid">${FIELDS.map(fieldHtml).join('')}</div>
+          <h2 class="section-title">등급</h2>
+          <div class="grade-rows">${rows.map(rowHtml).join('')}</div>
+          ${errors.rows ? `<p class="field-error">${errors.rows}</p>` : ''}
+          <div class="toolbar">
+            <button type="button" class="btn" id="add" ${rows.length >= 4 ? 'disabled' : ''}>등급 더하기</button>
+            ${rows.length >= 4 ? '<p class="hint">등급은 4개까지 넣을 수 있어요.</p>' : ''}
+          </div>
+          <div class="toolbar">
+            <div class="row">
+              <button type="submit" class="btn" id="save" ${saving ? 'disabled' : ''}>${saving ? '<span class="spinner" aria-label="저장하는 중"></span>' : '저장하기'}</button>
+              <a class="link" href="admin.html">취소</a>
+            </div>
+          </div>
+        </form>`;
+      P.bindLogout(screen);
+      screen.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = () => { f[el.dataset.f] = el.type === 'datetime-local' ? fromLocal(el.value) : el.value; });
+      screen.querySelectorAll('[data-r]').forEach(el => el.oninput = () => { rows[+el.dataset.r][el.dataset.k] = el.value; });
+      screen.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { rows.splice(+b.dataset.del, 1); errors = {}; render(); });
+      document.getElementById('add').onclick = () => { if (rows.length < 4) { rows.push({ 등급: '', 가격: '', 총수량: '' }); render(); } };
+      document.getElementById('form').onsubmit = submit;
+    }
+
+    function submit(ev) {
+      ev.preventDefault();
+      errors = {};
+      FIELDS.forEach(([k]) => { if (!String(f[k] || '').trim()) errors[k] = '이 칸을 입력해 주세요.'; });
+      rows.forEach((r, i) => ['등급', '가격', '총수량'].forEach(k => { if (!String(r[k]).trim()) errors[k + '-' + i] = '이 칸을 입력해 주세요.'; }));
+      if (!rows.length) errors.rows = '이 칸을 입력해 주세요.';
+      if (Object.keys(errors).length) { render(); return; }
+      saving = true; render();
+      setTimeout(() => {
+        saving = false;
+        if (nextResult === '서버가 칸을 거절') {
+          errors['종료일시'] = '<span class="proto-meta">〔서버가 준 이유〕</span> 값을 고친 뒤 다시 저장해 주세요.';
+          nextResult = '서버 판정대로'; renderStrip(); render(); return;
+        }
+        const out = P.saveEvent(id, f, rows.map(r => ({ ticket_type_id: r.ticket_type_id, 등급: r.등급.trim(), 가격: +r.가격, 총수량: +r.총수량 })));
+        if (out.errors) {
+          Object.keys(out.errors).forEach(k => { errors[k] = '총수량을 판매수량보다 작게 바꿀 수 없어요. 판매수량 이상으로 입력해 주세요.'; });
+          render(); return;
+        }
+        location.href = 'admin.html?saved=1';
+      }, 700);
+    }
+
+    function renderStrip() {
+      const r = (text) => ({ text, pressed: nextResult === text, onClick: () => { nextResult = text; renderStrip(); } });
+      P.strip(document.getElementById('strip'), 'S08 공연 등록·수정 · 수정이면 총수량을 판매수량보다 작게 넣어 저장해 본다(AC44). 같게 넣으면 잔여수량 0으로 저장된다(AC43)', [
+        { label: '저장하기 다음 결과', buttons: [r('서버 판정대로'), r('서버가 칸을 거절')] },
+        { label: '열기', buttons: [
+          { text: '새 공연 등록', href: 'admin-edit.html' },
+          { text: '수정: 유하늘 콘서트(등급 3개)', href: 'admin-edit.html?id=EV001' },
+          { text: '수정: 달빛 극장(등급 4개)', href: 'admin-edit.html?id=EV002' },
+        ] },
+      ]);
+    }
+    renderStrip();
+    render();
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 440" font-family="Pretendard, sans-serif">
+  <rect width="840" height="440" fill="#ffffff"/>
+  <text x="40" y="40" font-size="19" font-weight="700" fill="#0f1419">경쟁 조건 — 마지막 티켓 1장을 두 고객이 동시에 주문하면</text>
+  <text x="40" y="62" font-size="13" fill="#5b6472">재고 확인과 주문 저장을 따로 처리하면 두 주문이 모두 성공할 수 있다 (판매 2장, 잔여 −1)</text>
+
+  <!-- 시간축 -->
+  <line x1="120" y1="110" x2="120" y2="360" stroke="#c8ced6" stroke-width="2"/>
+  <text x="60" y="106" font-size="11.5" font-weight="700" fill="#5b6472">시간 ↓</text>
+  <text x="330" y="90" font-size="13" font-weight="700" fill="#0f1419" text-anchor="middle">고객 A</text>
+  <text x="600" y="90" font-size="13" font-weight="700" fill="#0f1419" text-anchor="middle">고객 B</text>
+  <text x="330" y="106" font-size="11" fill="#5b6472" text-anchor="middle">1장 남은 티켓 등급 주문</text>
+  <text x="600" y="106" font-size="11" fill="#5b6472" text-anchor="middle">동시에 같은 등급 주문</text>
+
+  <!-- t1 -->
+  <circle cx="120" cy="150" r="5" fill="#c2410c"/>
+  <text x="98" y="154" font-size="11" fill="#5b6472" text-anchor="end">t1</text>
+  <rect x="230" y="132" width="200" height="36" rx="7" fill="#f6f7f9" stroke="#c8ced6"/>
+  <text x="330" y="154" font-size="12" fill="#0f1419" text-anchor="middle">잔여 확인 → "1장 있음"</text>
+
+  <!-- t2 -->
+  <circle cx="120" cy="200" r="5" fill="#c2410c"/>
+  <text x="98" y="204" font-size="11" fill="#5b6472" text-anchor="end">t2</text>
+  <rect x="500" y="182" width="200" height="36" rx="7" fill="#f6f7f9" stroke="#c8ced6"/>
+  <text x="600" y="204" font-size="12" fill="#0f1419" text-anchor="middle">잔여 확인 → "1장 있음"</text>
+  <text x="600" y="234" font-size="10.5" fill="#c2410c" text-anchor="middle">(A의 주문이 저장되기 전이라 1장으로 보임)</text>
+
+  <!-- t3 -->
+  <circle cx="120" cy="262" r="5" fill="#c2410c"/>
+  <text x="98" y="266" font-size="11" fill="#5b6472" text-anchor="end">t3</text>
+  <rect x="230" y="244" width="200" height="36" rx="7" fill="#fbf7f4" stroke="#e0cabd"/>
+  <text x="330" y="266" font-size="12" fill="#0f1419" text-anchor="middle">주문 저장 → 성공</text>
+
+  <!-- t4 -->
+  <circle cx="120" cy="312" r="5" fill="#c2410c"/>
+  <text x="98" y="316" font-size="11" fill="#5b6472" text-anchor="end">t4</text>
+  <rect x="500" y="294" width="200" height="36" rx="7" fill="#fbf7f4" stroke="#e0cabd"/>
+  <text x="600" y="316" font-size="12" fill="#0f1419" text-anchor="middle">주문 저장 → 성공</text>
+
+  <!-- 결과 + 해법 -->
+  <rect x="120" y="372" width="680" height="52" rx="9" fill="#fff" stroke="#c2410c" stroke-width="1.8"/>
+  <text x="140" y="393" font-size="12.5" font-weight="700" fill="#c2410c">결과: 판매 2장 · 잔여 −1 — 골목 라이브의 초과 판매 사고도 같은 유형이다</text>
+  <text x="140" y="413" font-size="11.5" fill="#48515e">해법: 재고 확인·차감을 하나의 원자적 작업으로 처리하거나, DB의 CHECK 제약으로 초과 판매를 막는다</text>
+</svg>

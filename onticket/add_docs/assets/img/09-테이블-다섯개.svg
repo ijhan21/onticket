@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 614" font-family="Pretendard, sans-serif">
+<rect width="900" height="614" fill="#ffffff"/>
+<text x="24" y="34" font-size="18" font-weight="700" fill="#0f1419">온티켓의 테이블 다섯 개</text>
+<text x="24" y="56" font-size="12.5" fill="#5b6472">굵은 글씨는 각 행을 구분하는 번호(기본 키), 주황색 화살표는 다른 테이블을 가리키는 관계다</text>
+<rect x="24" y="78" width="276" height="236" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+<text x="42" y="108" font-size="15" font-weight="700" fill="#0f1419">events</text>
+<text x="282" y="108" font-size="13" fill="#5b6472" text-anchor="end">행사</text>
+<line x1="36" y1="120" x2="288" y2="120" stroke="#dde2e8" stroke-width="1"/>
+<text x="42" y="142" font-size="13" font-weight="700" fill="#0f1419">event_id</text>
+<text x="42" y="164" font-size="13" fill="#48515e">제목</text>
+<text x="42" y="186" font-size="13" fill="#48515e">카테고리</text>
+<text x="42" y="208" font-size="13" fill="#48515e">장소</text>
+<text x="42" y="230" font-size="13" fill="#48515e">도시</text>
+<text x="42" y="252" font-size="13" fill="#48515e">일시</text>
+<text x="42" y="274" font-size="13" fill="#48515e">판매상태</text>
+<text x="42" y="296" font-size="13" fill="#48515e">주최</text>
+<rect x="318" y="78" width="276" height="236" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+<text x="336" y="108" font-size="15" font-weight="700" fill="#0f1419">ticket_types</text>
+<text x="576" y="108" font-size="13" fill="#5b6472" text-anchor="end">티켓 등급</text>
+<line x1="330" y1="120" x2="582" y2="120" stroke="#dde2e8" stroke-width="1"/>
+<text x="336" y="142" font-size="13" font-weight="700" fill="#0f1419">ticket_type_id</text>
+<text x="336" y="164" font-size="13" font-weight="600" fill="#c2410c">event_id → events</text>
+<text x="336" y="186" font-size="13" fill="#48515e">등급</text>
+<text x="336" y="208" font-size="13" fill="#48515e">가격</text>
+<text x="336" y="230" font-size="13" fill="#48515e">총수량</text>
+<text x="336" y="252" font-size="13" fill="#48515e">판매수량</text>
+<rect x="612" y="78" width="276" height="236" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+<text x="630" y="108" font-size="15" font-weight="700" fill="#0f1419">users</text>
+<text x="870" y="108" font-size="13" fill="#5b6472" text-anchor="end">회원</text>
+<line x1="624" y1="120" x2="876" y2="120" stroke="#dde2e8" stroke-width="1"/>
+<text x="630" y="142" font-size="13" font-weight="700" fill="#0f1419">user_id</text>
+<text x="630" y="164" font-size="13" fill="#48515e">이름</text>
+<text x="630" y="186" font-size="13" fill="#48515e">이메일</text>
+<text x="630" y="208" font-size="13" fill="#48515e">전화번호</text>
+<text x="630" y="230" font-size="13" fill="#48515e">가입일시</text>
+<rect x="24" y="332" width="276" height="258" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+<text x="42" y="362" font-size="15" font-weight="700" fill="#0f1419">orders</text>
+<text x="282" y="362" font-size="13" fill="#5b6472" text-anchor="end">주문</text>
+<line x1="36" y1="374" x2="288" y2="374" stroke="#dde2e8" stroke-width="1"/>
+<text x="42" y="396" font-size="13" font-weight="700" fill="#0f1419">order_id</text>
+<text x="42" y="418" font-size="13" font-weight="600" fill="#c2410c">user_id → users</text>
+<text x="42" y="440" font-size="13" font-weight="600" fill="#c2410c">event_id → events</text>
+<text x="42" y="462" font-size="13" font-weight="600" fill="#c2410c">ticket_type_id → ticket_types</text>
+<text x="42" y="484" font-size="13" fill="#48515e">수량</text>
+<text x="42" y="506" font-size="13" fill="#48515e">결제금액</text>
+<text x="42" y="528" font-size="13" fill="#48515e">상태</text>
+<text x="42" y="550" font-size="13" fill="#48515e">주문일시</text>
+<text x="42" y="572" font-size="13" fill="#48515e">qr_code</text>
+<rect x="318" y="332" width="276" height="258" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+<text x="336" y="362" font-size="15" font-weight="700" fill="#0f1419">checkins</text>
+<text x="576" y="362" font-size="13" fill="#5b6472" text-anchor="end">입장 기록</text>
+<line x1="330" y1="374" x2="582" y2="374" stroke="#dde2e8" stroke-width="1"/>
+<text x="336" y="396" font-size="13" font-weight="700" fill="#0f1419">checkin_id</text>
+<text x="336" y="418" font-size="13" font-weight="600" fill="#c2410c">order_id → orders</text>
+<text x="336" y="440" font-size="13" fill="#48515e">qr_code</text>
+<text x="336" y="462" font-size="13" fill="#48515e">게이트</text>
+<text x="336" y="484" font-size="13" fill="#48515e">입장일시</text>
+<text x="336" y="506" font-size="13" fill="#48515e">판정</text>
+</svg>

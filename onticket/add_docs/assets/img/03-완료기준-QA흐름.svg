@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 512" font-family="Pretendard, sans-serif">
+  <rect width="840" height="512" fill="#ffffff"/>
+  <text x="40" y="40" font-size="19" font-weight="700" fill="#0f1419">완료 기준을 검수와 운영에도 활용한다</text>
+  <text x="40" y="62" font-size="13" fill="#5b6472">기획 단계의 완료 기준을 QA 검사와 운영 점검에서 같은 기준으로 활용한다</text>
+
+  <defs>
+    <marker id="ah-o" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 Z" fill="#c2410c"/></marker>
+  </defs>
+
+  <!-- 1. 완료 기준(기획) -->
+  <rect x="150" y="96" width="540" height="96" rx="12" fill="#fff" stroke="#c2410c" stroke-width="2"/>
+  <rect x="150" y="96" width="150" height="96" rx="12" fill="#fbf7f4" stroke="#e0cabd" stroke-width="1.2"/>
+  <text x="225" y="140" font-size="14" font-weight="700" fill="#c2410c" text-anchor="middle">완료 기준</text>
+  <text x="225" y="160" font-size="12" fill="#5b6472" text-anchor="middle">기획</text>
+  <text x="320" y="132" font-size="13.5" fill="#0f1419">완료 기준을 문장으로 적는다</text>
+  <text x="320" y="160" font-size="14" font-weight="700" fill="#0f1419">“잔여 수량이 0인 등급은</text>
+  <text x="320" y="180" font-size="14" font-weight="700" fill="#0f1419">예매 버튼이 비활성화된다”</text>
+
+  <!-- arrow 1 -->
+  <line x1="420" y1="192" x2="420" y2="236" stroke="#c2410c" stroke-width="1.8" marker-end="url(#ah-o)"/>
+  <text x="434" y="219" font-size="12.5" fill="#c2410c" font-weight="700">검사 항목으로 활용</text>
+
+  <!-- 2. QA의 검사 항목 -->
+  <rect x="150" y="240" width="540" height="96" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+  <rect x="150" y="240" width="150" height="96" rx="12" fill="#f2f4f6" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="225" y="284" font-size="14" font-weight="700" fill="#0f1419" text-anchor="middle">검사 항목</text>
+  <text x="225" y="304" font-size="12" fill="#5b6472" text-anchor="middle">QA</text>
+  <text x="320" y="278" font-size="13.5" fill="#0f1419">완료 기준에 맞게 동작하는지 확인한다</text>
+  <text x="320" y="306" font-size="14" font-weight="700" fill="#0f1419">잔여 수량을 0으로 설정한 뒤</text>
+  <text x="320" y="326" font-size="14" font-weight="700" fill="#0f1419">예매 버튼을 누를 수 없는지 확인</text>
+
+  <!-- arrow 2 -->
+  <line x1="420" y1="336" x2="420" y2="380" stroke="#c2410c" stroke-width="1.8" marker-end="url(#ah-o)"/>
+  <text x="434" y="363" font-size="12.5" fill="#c2410c" font-weight="700">기능 변경 후 재확인</text>
+
+  <!-- 3. 운영에서 다시 확인 -->
+  <rect x="150" y="384" width="540" height="96" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+  <rect x="150" y="384" width="150" height="96" rx="12" fill="#f2f4f6" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="225" y="428" font-size="14" font-weight="700" fill="#0f1419" text-anchor="middle">다시 확인</text>
+  <text x="225" y="448" font-size="12" fill="#5b6472" text-anchor="middle">운영</text>
+  <text x="320" y="422" font-size="13.5" fill="#0f1419">기능을 변경할 때마다 같은 기준으로 점검한다</text>
+  <text x="320" y="450" font-size="14" font-weight="700" fill="#0f1419">잔여 수량이 0인 등급의 예매 버튼이</text>
+  <text x="320" y="470" font-size="13" fill="#5b6472">기능 추가 후에도 비활성화되는지 확인</text>
+</svg>

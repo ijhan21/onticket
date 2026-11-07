@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S04 결제 실패 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<div class="proto-strip" id="strip"></div>
+
+<main class="screen" aria-label="S04 결제 실패" id="screen"></main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  const screen = document.getElementById('screen');
+  let reason = P.param('reason') || 'fail';
+  const MSG = {
+    fail: '결제가 완료되지 않았어요. 결제 정보를 확인하고 다시 시도해 주세요.',
+    cancel: '결제를 취소했어요. 예매하려면 다시 시도해 주세요.',
+    reject: '남은 수량이 부족해 결제가 완료되지 않았어요. 다른 등급이나 수량으로 다시 시도해 주세요.',
+  };
+  // D8: 다시 시도하면 골랐던 등급·수량·이메일을 채운 S02로
+  const q = new URLSearchParams(location.search);
+  const retry = `event.html?id=${encodeURIComponent(q.get('eid') || 'EV001')}`
+    + (q.get('tt') ? `&tt=${encodeURIComponent(q.get('tt'))}` : '')
+    + (q.get('qty') ? `&qty=${encodeURIComponent(q.get('qty'))}` : '')
+    + (q.get('email') ? `&email=${encodeURIComponent(q.get('email'))}` : '');
+
+  function render() {
+    screen.innerHTML = P.customerHeader() + `
+      <div class="body">
+        <p class="msg error h-title" role="alert">${P.ICON.alert}<span>${MSG[reason]}</span></p>
+        <a class="btn" href="${retry}">다시 시도</a>
+        <a class="link" href="home.html">공연 목록 보기</a>
+      </div>`;
+  }
+  function renderStrip() {
+    const r = (key, text) => ({ text, pressed: reason === key, onClick: () => { reason = key; renderStrip(); render(); } });
+    P.strip(document.getElementById('strip'), 'S04 결제 실패 · QR 티켓과 주문 정보는 보이지 않는다', [
+      { label: '상태', buttons: [r('fail', '결제 실패'), r('cancel', '결제 취소'), r('reject', '승인 거절')] },
+    ]);
+  }
+  renderStrip();
+  render();
+</script>
+</body>
+</html>

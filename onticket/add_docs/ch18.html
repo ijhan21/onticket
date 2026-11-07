@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>18장. CI — push하면 기계가 검사한다 — AI Driven Development</title>
+<link rel="stylesheet" href="assets/style.css">
+</head><body data-prev="ch17.html" data-next="ch19.html"><div class="wrap">
+<div class="nav"><a class="home" href="index.html">AI Driven Development</a><span class="spacer"></span><a class="btn" href="ch17.html">← 이전</a><a class="btn" href="index.html">목차</a><a class="btn" href="ch19.html">다음 →</a></div>
+<h1>18장. CI — push하면 기계가 검사한다</h1>
+<blockquote class="intro">
+<p>이 장이 끝나면: 온티켓 저장소의 main에 push할 때마다 <strong>클라우드가 자동으로
+빌드와 타입 검사를 돌리는</strong> CI 파이프라인이 갖춰져 있다. 내 컴퓨터가 아니라 클라우드에서
+검사가 도는 것을 눈으로 확인하고, 워크플로 파일(YAML)을 읽을 줄 알게 된다.</p>
+</blockquote>
+<hr />
+<h2>18.1 개념 — 내 컴퓨터를 넘어서는 검사</h2>
+<p>지금 온티켓은 오대표 혼자 보던 코드에서 사람이 늘어나는 서비스로 커 가는 중이다.
+이 상황에서 "올리기 전에 각자 빌드 한번 돌려 보자"는 약속만으로 버틸 수 있을까.
+각자 자기 노트북에서 성실하게 확인하는 방식에는 최소 네 개의 구멍이 있다.</p>
+<ul>
+<li><strong>미설치 구멍</strong>: 새로 합류한 사람의 컴퓨터에는 검사 도구가 아예 없다. 악의가 아니라 "몰라서"가 대부분이다.</li>
+<li><strong>건너뛰기 구멍</strong>: 급할 때 "이번만" 하고 확인을 생략한다. 그래도 아무 일도 일어나지 않는다.</li>
+<li><strong>환경 구멍</strong>: 웹 편집기나 다른 도구로 저장소를 바로 수정하면, 내 노트북에서 검사할 기회가 없다.</li>
+<li><strong>버전 구멍</strong>: A의 컴퓨터와 B의 컴퓨터에 깔린 도구 버전이 다르다. 사람마다 검사 기준이 달라진다.</li>
+</ul>
+<p>즉 개인의 확인은 <strong>"모두가 성실하게, 같은 기준으로, 매번 한다"</strong> 는 전제 위에서만 완전하다.
+그 전제는 사람이 하나 늘 때마다 약해진다. 검증을 개인의 습관에 맡겨 두는 한 언젠가는
+새는 날이 온다. 온티켓처럼 결제와 좌석이 걸린 서비스에서 그 하루가 하필 초과 판매 사고
+(골목 라이브의 그날처럼)로 이어지면 곤란하다.</p>
+<p>그래서 필요한 것은 반대 방향이다. <strong>저장소에 올라온 모든 변경을, 누가 올렸든, 기계가 같은
+기준으로 검사하는 것.</strong> 검사가 일어나는 자리를 개인의 노트북에서 저장소 쪽으로 옮겨야 한다.</p>
+<h3>CI — 성실함에 기대지 않는 체계</h3>
+<p>그 자리를 옮기는 것이 <strong>CI(Continuous Integration, 지속적 통합)</strong> 다.
+CI는 코드가 <strong>저장소(GitHub)에 올라오는 순간</strong>, 내 컴퓨터가 아니라
+<strong>중립적인 클라우드 서버가</strong> 검사를 돌리는 체계다. 누구의 컴퓨터에 무엇이
+깔렸든 상관없다 — 누가 올린 코드든 같은 서버에서 같은 검사를 받는다.</p>
+<p>핵심 단어는 <strong>'중립'</strong> 이다. 개인이 직접 확인할 때는 사람마다 설정이 다른
+자기 컴퓨터에서 검사한다. CI가 도는 서버는 <strong>모두가 함께 쓰는 공용 공간</strong>이다. 오대표의
+맥북에서도, 새로 합류한 사람의 윈도우 노트북에서도, 코드는 결국 같은 클라우드 머신에서
+똑같은 방식으로 검사받는다. "내 컴퓨터에선 됐는데요"라는 말이 통하지 않는 이유가 여기 있다 —
+판정 장소가 개인의 컴퓨터가 아니라 모두에게 동일한 제3의 장소이기 때문이다.</p>
+<p>'지속적 통합(Continuous Integration)'이라는 이름도 풀어 보면 개념이 또렷해진다. 여기서
+<strong>통합(integration)</strong> 은 여러 사람이 따로 작업한 코드를 하나로 합치는 일을 말한다. 옛날에는
+각자 몇 주씩 따로 개발하다가 마지막에 한꺼번에 합쳤는데, 그러면 충돌과 버그가 산더미처럼
+터졌다(이른바 '통합 지옥'). 그래서 나온 발상이 <strong>"작게, 자주, 계속 합치자"</strong> 였다. 합칠 때마다
+바로 검사해서 깨진 곳을 즉시 잡으면, 문제가 쌓이기 전에 발견된다. <strong>지속적(continuous)</strong> 은
+바로 이 '합칠 때마다 매번, 자동으로'를 가리킨다. CI란 결국 <strong>"코드가 합쳐지는 순간마다
+자동으로 검사가 돈다"</strong> 는 약속이다.</p>
+<p>검사가 일어나는 자리를 시간 축으로 그리면 이렇다.</p>
+<p><img alt="내 컴퓨터에서는 커밋과 push까지, 검사와 판정은 저장소 쪽 클라우드에서" src="assets/img/18-CI-파이프라인.svg" /></p>
+<h3>이것이 '자동화'의 진짜 의미</h3>
+<p>지금까지 우리는 검증을 만들었다 — 코드리뷰어, QA, 보안 엔지니어. CI의 역할은
+그 검증들을 <strong>사람이 기억하지 않아도 매번 돌게</strong> 만드는 것이다. 좋은 자동화의
+기준은 하나다: <strong>"안 하면 어떻게 되지?"의 답이 '자동으로 막힌다'인가.</strong>
+잊을 수 있는 규칙은 규칙이 아니라 권고다.</p>
+<p>이 기준을 실제 업무에 적용해 보자. 팀에서 "앞으로 올리기 전엔 꼭 빌드 한번 돌려 봅시다"
+같은 다짐을 회의에서 정하는 경우가 많은데, 이런 다짐의 운명을 가르는 질문은 딱 하나다.</p>
+<p><strong>"그걸 깜빡한 사람에게 무슨 일이 일어나는가?"</strong></p>
+<ul>
+<li>답이 "아무 일도 안 일어난다(그냥 넘어간다)"라면 → 그건 <strong>권고</strong>다. 언젠가 반드시 새어 나간다.</li>
+<li>답이 "자동으로 막힌다(진행이 안 된다)"라면 → 그건 <strong>규칙</strong>이다. 깜빡할 수가 없다.</li>
+</ul>
+<p>이 잣대로 흔한 방식들을 갈라 보면 판단이 쉬워진다.</p>
+<table>
+<thead>
+<tr>
+<th>흔한 방식</th>
+<th>"안 하면?"의 답</th>
+<th>판정</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"올리기 전에 빌드 돌려 보자"고 회의에서 약속</td>
+<td>깜빡해도 아무 일 없음</td>
+<td>권고 (샌다)</td>
+</tr>
+<tr>
+<td>README에 "배포 전 체크리스트" 적어 둠</td>
+<td>안 읽어도 그만</td>
+<td>권고 (샌다)</td>
+</tr>
+<tr>
+<td><strong>이 장에서 세우는 CI</strong></td>
+<td><strong>깜빡해도 기계가 대신 검사하고 결과를 남김</strong></td>
+<td><strong>경고등 (샌 것을 즉시 알려 준다)</strong></td>
+</tr>
+<tr>
+<td>CI + 브랜치 보호(팀)</td>
+<td>빨간 X면 병합 버튼이 잠김</td>
+<td>규칙 (못 샌다)</td>
+</tr>
+</tbody>
+</table>
+<p>이 장의 자리를 미리 정직하게 밝혀 둔다. 혼자 만드는 지금 세우는 것은 넷째 줄이 아니라
+셋째 줄, <strong>경고등</strong>이다. 사람이 여럿이 되면 그 경고등에 잠금 장치를 물린다. 어느 쪽이든
+핵심은 같다 — 자동화의 가치는 <strong>'편해지는가'가 아니라 '사람의 기억에 기대지 않는가'로
+잰다.</strong> 알림을 띄우는 자동화, 리포트를 이메일로 보내는 자동화가 흐지부지되는 이유는,
+그것이 사람이 챙겨야 비로소 일하기 때문이다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 이 "안 하면 자동으로 막히는가" 잣대는 실무에서 두고두고 쓰는 사고
+도구다. 내가 속한 회사·학교의 규칙 중 사실은 권고인 것을 하나씩 떠올려 보면 개념이
+확 붙는다(예: "커밋 메시지 꼭 잘 쓰기" 같은 것 대부분은 권고다).
+그 권고를 어떻게 규칙으로 바꿀지 상상해 보면, CI/자동화의 본질이 손에 잡힌다.</p>
+</blockquote>
+<h3>무엇을 검사할까</h3>
+<p>CI에 아무거나 올릴 수는 없다. 판정이 애매한 검사를 올리면 멀쩡한 변경에도 빨간 X가
+뜨고, 그러다 보면 사람이 결과를 안 믿게 되고 결국 검사를 꺼 버린다. 그래서 고르는
+기준은 둘이다 — <strong>기계가 명확히 판정할 수 있는가</strong>, 그리고 <strong>사람이 깜빡했을 때 기계가
+대신 봐 줬으면 하는가.</strong></p>
+<p>온티켓에서 그 답이 가장 분명한 것이 <strong>빌드</strong>와 <strong>타입 검사</strong> 둘이다(각각 무엇을 보는
+검사인지는 바로 다음 용어 정리에서 짚는다). 둘 중 하나라도 깨진 코드가 main에 들어가면
+<strong>그 순간부터 아무도 배포하지 못한다.</strong> 되돌리려면 사람이 원인을 찾아 고치고 다시 올리는
+왕복을 해야 하니, "올리자마자 알려 줌"의 가치가 가장 크다.</p>
+<table>
+<thead>
+<tr>
+<th>CI에 세울 검사</th>
+<th>CI에서 하는 일</th>
+<th>온티켓에서 막는 사고</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>타입 검사</td>
+<td>값의 종류가 어긋난 곳이 없는지 대조</td>
+<td>API 응답 구조이 바뀐 걸 모르고 쓰던 화면이 깨진 채 main에 들어감</td>
+</tr>
+<tr>
+<td>빌드</td>
+<td>내보낼 수 있는 형태로 실제로 만들어지는지 확인</td>
+<td>"내 PC에선 됐는데" 빌드가 서버에서 깨져 배포가 막힘</td>
+</tr>
+<tr>
+<td>린트(이후)</td>
+<td>코드 스타일·명백한 실수 자동 점검</td>
+<td>자잘한 오류가 리뷰 시간을 잡아먹음</td>
+</tr>
+</tbody>
+</table>
+<p>처음부터 다 넣지 않는다. <strong>빌드와 타입 검사 둘로 시작</strong>해 초록/빨강이 도는 것을
+확인하고, 검사가 작동하면 하나씩 추가한다. 처음부터 검사를 다 욱여넣으면 무언가
+실패했을 때 <strong>어느 스텝이 왜 실패했는지 가려내기가 어렵다.</strong> 게다가 CI를 처음 세울 땐
+워크플로 파일 자체의 사소한 문제(도구 버전, 설치 순서 등)로 실패하기 쉬운데, 스텝이 몇 개
+안 되면 원인이 뻔히 보인다. <strong>도는 검사를 먼저 확실히 세운 뒤</strong> 스텝을 한 개씩 추가하며
+매번 "여전히 잘 도는가"를 확인하는 것이 결국 가장 빠르다. 안 도는 거대한 파이프라인보다,
+도는 작은 검사가 낫다.</p>
+<hr />
+<h2>18.2 용어 정리</h2>
+<p>이 장에서 처음 만나는 용어들이다. 앞의 개념을 실제로 세우려면 이 단어들이 눈에 익어야 한다.
+완벽히 외울 필요는 없다 — 워크플로 파일(YAML)을 읽을 때 "아, 이게 그거구나" 하고
+알아보는 정도면 충분하다. 어차피 작성은 AI가 하고, 우리는 <strong>읽고 판단</strong>한다.</p>
+<h3>CI / CD</h3>
+<ul>
+<li><strong>CI(지속적 통합)</strong>: 코드가 합쳐질 때마다 자동으로 검사하는 것.
+  이 장의 주제다</li>
+<li><strong>CD(지속적 배포)</strong>: 검사를 통과한 코드를 자동으로 배포까지 하는 것.
+  배포를 다루는 장에서 이어진다</li>
+</ul>
+<p>CI가 "합쳐도 안전한가"를 묻는다면, CD는 "안전하니 내보내자"를 실행한다.
+이 장에서는 CI — 검사를 세우는 데 집중한다.</p>
+<p>두 글자를 조금 더 풀어 두자. <strong>CI는 항상 Continuous Integration(지속적 통합)</strong> 이다.
+그런데 <strong>CD는 두 가지 뜻</strong>이 섞여 쓰인다 — Continuous <strong>Delivery</strong>(지속적 전달)와
+Continuous <strong>Deployment</strong>(지속적 배포)다. 둘의 차이는 "마지막에 사람이 버튼을 누르느냐"다.</p>
+<table>
+<thead>
+<tr>
+<th>약자</th>
+<th>풀네임</th>
+<th>무엇을</th>
+<th>사람 개입</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CI</td>
+<td>Continuous Integration</td>
+<td>합칠 때마다 자동 검사</td>
+<td>검사 통과/실패를 사람이 확인</td>
+</tr>
+<tr>
+<td>CD</td>
+<td>Continuous Delivery(전달)</td>
+<td>배포 직전까지 자동 준비</td>
+<td><strong>배포 버튼은 사람이 누름</strong></td>
+</tr>
+<tr>
+<td>CD</td>
+<td>Continuous Deployment(배포)</td>
+<td>검사 통과하면 배포까지 자동</td>
+<td>사람 개입 없음</td>
+</tr>
+</tbody>
+</table>
+<p>이 장에서 세우는 건 그중 <strong>CI 하나</strong>다. "검사가 자동으로 돈다"까지만 온티켓에 붙인다.
+"통과한 코드를 실제 서버로 내보낸다"는 그다음 이야기이고, 배포 자체를 다룰 때 이어 붙인다.
+지금 이 순서가 중요하다 — <strong>검사도 못 믿는 코드를 자동으로 배포하는 것</strong>만큼 위험한 게 없다.
+그래서 CI(믿을 수 있는 검사)를 먼저 세우고, CD(자동 배포)는 그다음에 붙인다.</p>
+<h3>빌드와 타입 검사 — CI에 세울 두 검사</h3>
+<p>이 장의 CI가 돌릴 검사 둘을 먼저 정의하고 간다. 이름은 몇 번 스쳐 갔지만 제대로 짚은 적은
+없는 단어들이다.</p>
+<p><strong>빌드(build)</strong> 는 사람이 쓴 소스 코드를 <strong>실제로 내보낼 수 있는 형태로 만들어 내는 작업</strong>이다.
+개발하는 동안 <code>pnpm dev</code>로 띄워 보던 것은 '지금 고치는 중인 나'를 위한 임시 실행이라, 고친
+파일만 후다닥 갈아 끼우고 넘어간다. 빌드는 다르다 — 프로젝트 전체를 처음부터 훑어서, 흩어진
+파일을 묶고, 용량을 줄이고, 브라우저와 서버가 그대로 실행할 수 있는 결과물을 만든다.</p>
+<p>여기서 핵심은 하나다. <strong>빌드는 실패할 수 있다.</strong> 없는 파일을 가져다 쓰거나, 괄호가 안 닫혔거나,
+어딘가 이름이 틀렸으면 빌드가 도중에 멈추고 오류를 출력한다. 뒤집어 말하면, 빌드가 성공했다는
+것은 <strong>"적어도 내보낼 수는 있는 상태"</strong> 라는 보증이다. 빌드가 깨진 코드가 main에 들어가면
+그 순간부터 아무도 배포할 수 없게 되므로, 이건 올리는 즉시 알아야 하는 종류의 사고다.</p>
+<p><strong>타입 검사(type check)</strong> 는 조금 설명이 필요하다. 프로그램이 다루는 값에는 <strong>종류</strong>가 있다 —
+1200은 숫자, "골목 라이브"는 글자, 주문 한 건은 여러 값이 묶인 덩어리. 이 종류를 흔히
+<strong>타입(type)</strong> 이라 부른다. 온티켓의 <code>web/</code>과 <code>api/</code>도 이 종류를 코드에 적어 두는 언어로
+만들어져 있다 — 자바스크립트에 타입 표기를 얹은 <strong>TypeScript(타입스크립트)</strong> 다(뼈대를 세울 때
+고른 Next.js와 Hono의 기본값이 그렇다). "이 자리에는 숫자가 온다", "이 값에는 <code>email</code>이라는
+항목이 있다"를 코드에 적어 두는 언어다.</p>
+<p>적어 두면 무엇이 좋은가. <strong>돌려 보기 전에 기계가 대조해 준다.</strong> 숫자가 와야 할 자리에 글자를
+넘겼거나, 없는 항목을 꺼내 쓰거나, 변수 이름을 한 글자 틀리게 썼으면 — 실행하지 않고도
+"여기 어긋났다"를 짚어 낸다. 이 대조 작업이 타입 검사다.</p>
+<p>왜 하필 이 둘을 CI에 세우는가. 이유가 셋이다.</p>
+<ul>
+<li><strong>빠짐없이 전부 본다.</strong> 사람이 확인 시나리오를 짤 필요가 없다. 코드 전체를 기계가 훑는다.</li>
+<li><strong>판정이 명확하다.</strong> 되거나 안 되거나 둘 중 하나라, "이건 통과인가 아닌가"로 다툴 일이 없다.
+  CI에 세울 검사의 첫째 조건이 바로 이 명확함이다.</li>
+<li><strong>AI와 일할 때 특히 효과적이다.</strong> AI는 한 번에 여러 파일을 고친다. 그때 가장 흔한 사고가
+  "A 파일은 고쳤는데 그 A를 가져다 쓰던 B 파일은 그대로"인 어긋남이다. 사람 눈으로 그걸 다
+  쫓기는 어렵다. 타입 검사는 정확히 그 어긋남을 잡는 도구다.</li>
+</ul>
+<p>한계도 같이 알아 두자. 이 둘은 <strong>"돌아가긴 한다"까지만</strong> 보증한다. 결제 금액이 1원 틀린 것,
+좌석 수를 잘못 센 것은 빌드도 타입 검사도 잡지 못한다 — 문법적으로는 멀쩡한 코드이기
+때문이다. 그건 코드리뷰어와 QA가 보는 영역이다. CI에는 <strong>기계가 확실히 판정할 수 있는
+것만</strong> 올린다. 애매한 검사를 올리면 멀쩡한 변경에 빨간 X가 떠서, 결국 사람이 검사를 꺼
+버린다.</p>
+<p>온티켓에서 이 둘은 대개 <code>pnpm build</code>와 <code>tsc --noEmit</code> 같은 명령으로 돈다. 다만 정확한 명령은
+프로젝트 설정에 따라 다르므로 외울 필요가 없다 — 뒤의 프롬프트에서 "프로젝트 구조를 먼저
+확인해서 맞추고"라고 말해, AI가 실제 설정을 읽고 채우게 한다.</p>
+<h3>GitHub Actions</h3>
+<p><strong>GitHub이 제공하는 CI/CD 도구.</strong> 저장소에 워크플로 파일을 넣어 두면,
+지정한 사건(push 등)이 일어날 때 GitHub이 클라우드에서 그 작업을
+실행해 준다. 별도 서버 계약이 필요 없고, 공개 저장소나 소규모 사용은
+무료 사용량 안에서 돈다 — 우리 온티켓에 충분하다.</p>
+<p>이름을 그대로 읽으면 'GitHub의 <strong>행동들</strong>'이다. 저장소에서 어떤 사건이 일어났을 때 GitHub이
+대신 취해 주는 일련의 행동을 묶어 놓은 것이다. 왜 이게 편한지 대안과 비교하면 분명해진다.</p>
+<ul>
+<li><strong>GitHub Actions를 안 쓴다면</strong>: 클라우드 어딘가에 검사 전용 서버를 직접 빌리고, 그 서버에
+  "저장소에 새 코드가 오면 받아와서 검사를 돌려라"를 계속 켜 두는 프로그램을 깔아야 한다.
+  서버 요금·관리·보안이 다 내 몫이다. (예전엔 Jenkins 같은 도구를 이런 식으로 직접 운영했다.)</li>
+<li><strong>GitHub Actions를 쓴다면</strong>: 저장소 안에 지시서(워크플로 파일) 한 장만 넣으면 끝이다. 검사용
+  컴퓨터는 GitHub이 매번 새로 빌려주고, 다 쓰면 알아서 반납한다. 우리는 서버를 소유하지 않는다.</li>
+</ul>
+<p><strong>요금 감각</strong>도 잡아 두자. GitHub Actions는 '검사에 쓴 컴퓨터 시간(분)'으로 과금하는데,
+공개(public) 저장소는 이 시간이 <strong>완전 무료</strong>이고, 비공개(private) 저장소도 매달 일정
+무료 사용량(개인 계정 기준 월 2,000분 수준)이 주어진다. 온티켓 CI 한 번은 대개 1~3분 남짓이라,
+하루에 수십 번을 돌려도 소규모 프로젝트는 무료 범위를 넘기기 어렵다. "돈이 새는 것 아니냐"는
+걱정은 이 단계에선 접어 두어도 된다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> "GitHub Actions 말고 다른 CI도 있나?" 물론 있다. CircleCI, GitLab CI,
+Jenkins 등 대안이 있지만, 온티켓 코드가 이미
+GitHub에 있으니 <strong>같은 곳에서 검사까지 되는</strong> GitHub Actions가 가장 마찰이 적다. "코드가
+사는 집에 검사 설비가 붙어 있는 격"이라고 정리하면 왜 이걸 고르는지 납득된다.</p>
+</blockquote>
+<h3>워크플로, 잡, 스텝</h3>
+<p>GitHub Actions의 구조는 3층이다.</p>
+<table>
+<thead>
+<tr>
+<th>층</th>
+<th>뜻</th>
+<th>온티켓 예</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>워크플로(workflow)</td>
+<td>하나의 자동화 전체. YAML 파일 하나</td>
+<td>"main에 push되면 빌드와 타입 검사를 한다"</td>
+</tr>
+<tr>
+<td>잡(job)</td>
+<td>워크플로 안의 독립된 작업 단위</td>
+<td>"검사(check)" 잡</td>
+</tr>
+<tr>
+<td>스텝(step)</td>
+<td>잡 안의 개별 명령</td>
+<td>코드 받기 → 의존성 설치 → 타입 검사 → 빌드</td>
+</tr>
+</tbody>
+</table>
+<p>이 3층을 회사 업무에 빗대면 한 번에 들어온다.</p>
+<ul>
+<li><strong>워크플로</strong>는 하나의 <strong>업무 지시서</strong> 전체다. "main에 push되면 이러이러하게 처리하라"는 문서 한 장.</li>
+<li><strong>잡</strong>은 그 지시서 안의 <strong>한 명이 맡는 일감</strong>이다. 잡이 여럿이면 여러 사람이 동시에 나눠
+  일하듯 <strong>병렬로</strong> 돈다(예: 'web 검사' 잡과 'api 검사' 잡을 동시에). 우리는 우선 잡 하나로 시작한다.</li>
+<li><strong>스텝</strong>은 그 일감을 처리하는 <strong>개별 실행 단계</strong>다. "코드 받기 → 도구 준비 → 설치 →
+  검사"처럼 위에서 아래로 하나씩 실행된다. 스텝 하나가 실패하면 그 잡은 거기서 멈추고 실패한다.</li>
+</ul>
+<p>용어 하나 더 — 스텝에는 두 종류의 실행 방식이 있다. YAML에서 <code>run:</code>으로 시작하면 <strong>직접
+명령을 치는</strong> 스텝이고(예: <code>pnpm build</code>), <code>uses:</code>로 시작하면 <strong>남이 미리 만들어 둔 행동 묶음을
+가져다 쓰는</strong> 스텝이다(예: <code>actions/checkout</code> — "코드 받아오기"라는 흔한 작업을 누군가
+포장해 둔 것). <code>uses:</code>는 "이 작업은 바퀴를 새로 발명하지 말고 만들어진 걸 쓰자"는 뜻으로
+읽으면 된다.</p>
+<h3>YAML — 설정을 적는 언어</h3>
+<p><strong>YAML</strong>은 설정을 사람이 읽기 쉽게 적는 형식이다. 워크플로 파일이 이 형식으로 쓰인다.
+작성은 AI가 하고 우리는 <strong>읽는다.</strong> 읽는 데 필요한 규칙은 셋뿐이다.</p>
+<ol>
+<li><strong><code>이름: 값</code></strong> — 콜론 왼쪽은 항목 이름, 오른쪽은 값이다. <code>name: CI</code>는 "name이라는
+   항목의 값은 CI다"로 읽는다.</li>
+<li><strong>들여쓰기는 "안에 속함"을 뜻한다</strong> — 더 깊이 들여 쓴 줄은 바로 위 항목에 딸린 하위
+   항목이다. <code>jobs:</code> 아래에 한 단 들여 쓴 <code>check:</code>는 "jobs 안에 check라는 잡이 있다"로
+   읽는다. 들여쓰기 한 항목이 문법이라 공백이 어긋나면 동작하지 않는다.</li>
+<li><strong><code>-</code>(붙임표+공백)는 목록의 한 항목</strong> — 줄 맨 앞의 <code>-</code>는 "여기부터 목록의 한 개"라는
+   표시다. <code>steps:</code> 아래 <code>-</code>가 다섯 개면 순서대로 실행되는 스텝이 다섯 개다.</li>
+</ol>
+<p>곁들여, <code>#</code>으로 시작하는 줄은 <strong>주석</strong>(사람 메모, 실행에 영향 없음)이다.</p>
+<p>이 셋으로 실제 워크플로를 읽어 보자.</p>
+<pre><code class="language-yaml"># .github/workflows/ci.yml — 읽기용 예시
+name: CI
+on:                       # 언제 도나
+  push:
+    branches: [main]      #  - main에 push될 때
+jobs:
+  check:                  # check 라는 잡
+    runs-on: ubuntu-latest   # 클라우드의 리눅스 머신에서
+    steps:
+      - uses: actions/checkout@v4     # 1) 코드를 받아온다
+      - uses: pnpm/action-setup@v4    # 2) pnpm 준비
+      - run: pnpm install             # 3) 의존성 설치
+      - run: pnpm typecheck           # 4) 타입 검사 ← 어긋나면 잡 실패
+      - run: pnpm build               # 5) 빌드 ← 깨지면 잡 실패
+</code></pre>
+<p>소리 내어 읽으면 이렇다 — "main에 push가 있으면, 리눅스에서, 코드 받고, pnpm 깔고,
+타입을 대조하고, 빌드해 본다." 그게 전부다. 워크플로 파일은 <strong><code>on</code>(언제)</strong> 과
+<strong><code>jobs</code>(무엇을)</strong> 두 덩어리로 나뉘니, 이 두 단어만 눈으로 찾으면 나머지는 딸림 정보다.
+<code>@v4</code> 같은 꼬리표는 "그 도구의 4번째 버전을 쓴다"는 <strong>버전 고정</strong> 표시이고,
+<code>ubuntu-latest</code>는 클라우드의 최신 우분투(리눅스) 머신을 빌려 쓴다는 뜻이다. 내 노트북이
+윈도우든 맥이든 검사는 이 중립 리눅스 머신에서 돈다 — 앞서 말한 '중립'이 이 한 줄로 실현된다.
+들여쓰기가 틀려 워크플로가 안 돌면, AI에게 "이 YAML 문법 검사해서 고쳐줘"라고 시키면 된다.</p>
+<h3>상태 체크 — 초록과 빨강</h3>
+<p>CI가 돌고 나면 그 실행에 <strong>초록 체크(통과)</strong> 또는 <strong>빨간 X(실패)</strong> 가 남는다. 이 판정을
+<strong>상태 체크(status check)</strong> 라고 부른다. push한 커밋 옆에도, Actions 탭의 실행 목록에도
+같은 도장이 찍힌다.</p>
+<p>여기서 정직하게 짚을 것이 하나 있다. <strong>상태 체크는 표시일 뿐이다.</strong> 빨간 X가 떠도 코드는
+이미 main에 들어가 있다. 혼자 만드는 지금 CI는 잠금 장치가 아니라 <strong>경고등</strong>이다. 그래도
+값이 있다 — 내가 못 본 것을, 내 컴퓨터에 무엇이 깔렸든 상관없이, 기계가 즉시 알려 준다.
+알려 주지 않으면 고칠 수도 없다.</p>
+<p>사람이 여럿이 되면 여기에 <strong>브랜치 보호 규칙(branch protection rule)</strong> 을 건다. "이 상태
+체크가 초록이 아니면 main에 못 합친다"를 GitHub이 강제하게 만드는 설정이다. 그때 경고등은
+잠금 장치가 되고, 이 장 첫머리의 "권고를 규칙으로"가 완성된다. 지금은 경고등까지다.</p>
+<hr />
+<h2>18.3 프롬프트 작성법 — CI 워크플로를 만든다</h2>
+<p>CI 작업의 프롬프트도 지금까지와 원칙이 같다 — <strong>사람만 아는 결정(언제 돌릴지, 어디까지 할지)만
+말하고, 나머지는 AI가 채운 뒤 사람이 읽어 확인한다.</strong></p>
+<h3>CI 워크플로 생성 지시</h3>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="main에 push하면 빌드와 타입 검사가 자동으로 돌도록 GitHub Actions를 만들어줘.&#10;다 만들면 한 줄씩, 무슨 뜻인지 설명해줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">main에 push하면 빌드와 타입 검사가 자동으로 돌도록 GitHub Actions를 만들어줘.</span><span class="pl" style="padding-left:0ch">다 만들면 한 줄씩, 무슨 뜻인지 설명해줘.</span></code></pre></div>
+<p>이 지시가 두 줄로 충분한 이유를 보자. 첫 줄에서 사람이 정한 것은 두 가지뿐이다 — <strong>언제 도는지</strong>
+(main에 push할 때)와 <strong>무엇을 검사하는지</strong>(빌드와 타입 검사). 이 둘은 AI가 코드를 읽어서는 알 수
+없는, 사람만 내릴 수 있는 결정이다. 그 밖의 것은 적지 않았다.</p>
+<table>
+<thead>
+<tr>
+<th>프롬프트에 적지 않은 것</th>
+<th>왜 안 적어도 되는가</th>
+<th>사람은 어디서 확인하나</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>파일 위치(<code>.github/workflows/ci.yml</code>)</td>
+<td>GitHub이 정한 규칙이라 AI가 안다</td>
+<td>실습에서 파일을 열 때 경로를 눈으로 확인한다</td>
+</tr>
+<tr>
+<td>검사를 돌리는 정확한 명령(<code>pnpm build</code>인지 <code>pnpm --filter web build</code>인지)</td>
+<td>프로젝트 설정 파일에 적혀 있다. AI가 읽고 맞춘다</td>
+<td>만들어진 파일에서 명령 줄을 눈으로 확인한다</td>
+</tr>
+<tr>
+<td>스텝 순서(우분투 → 코드 체크아웃 → pnpm 설치 → 의존성 설치 → 검사)</td>
+<td>AI가 프로젝트를 읽고 채운다</td>
+<td>만들어진 파일을 읽는다</td>
+</tr>
+<tr>
+<td>검사가 실패하면 잡이 실패한다</td>
+<td>CI의 기본 동작이다</td>
+<td>Actions 탭의 초록/빨강 판정으로 드러난다</td>
+</tr>
+</tbody>
+</table>
+<p>스텝 순서를 외워서 불러 줄 수 있는 사람은 YAML을 써 본 사람뿐이다. 우리는 YAML을 쓰지 않고
+<strong>읽는</strong> 사람이다. 그래서 <strong>스텝은 AI가 채우고, 사람은 읽어서 확인한다.</strong> 둘째 줄 "다 만들면 한
+줄씩, 무슨 뜻인지 설명해줘"가 그 읽기를 돕는다. AI가 만든 파일을 풀이와 함께 받아야, 처음 보는
+YAML도 사람이 읽고 확인할 수 있다.</p>
+<table>
+<thead>
+<tr>
+<th>약한 지시</th>
+<th>강한 지시</th>
+<th>무엇을 바꿨나</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CI 좀 만들어줘</td>
+<td>main에 push하면 빌드와 타입 검사가 자동으로 돌도록 GitHub Actions를 만들어줘</td>
+<td>'언제'를 구체적 사건(main으로의 push)으로, '검사'를 무엇을 보는 검사인지로. 둘 다 사람의 결정이다. 스텝은 적지 않았다</td>
+</tr>
+<tr>
+<td>YAML 만들어줘</td>
+<td>…다 만들면 한 줄씩, 무슨 뜻인지 설명해줘</td>
+<td>결과물뿐 아니라 '내가 읽을 수 있게'까지 요구 — 확인은 사람의 몫이므로</td>
+</tr>
+</tbody>
+</table>
+<p>"main에 push하면"은 파일에 <code>push: branches: [main]</code>으로 적힌다. 이 과정에서는 브랜치를 나누지
+않고 main 하나로 가므로, 검사가 붙어야 할 사건도 main으로의 push 하나다. 팀이 되어 브랜치와 PR을
+쓰기 시작하면 여기에 <code>pull_request</code>를 더해 "합치기 전에도 검사"를 붙인다. 검사를 빌드와 타입 검사
+둘로 정한 것도 결정이다 — 린트나 시크릿 스캔은 CI가 초록으로 도는 걸 확인한 뒤에 추가한다.</p>
+<hr />
+<h2>18.4 실습 — 클라우드에서 자동 검사를 실행한다</h2>
+<p>이 실습의 목표는 온티켓 저장소에 <strong>"main에 push하면 자동으로 빌드와 타입 검사가 도는"</strong>
+CI를 세우는 것이다. 프롬프트는 하나다. 대신 만들어진 파일을 읽고, 클라우드에서 검사가 도는
+것을 눈으로 확인하는 데 시간을 쓴다. 준비물도 하나 — 온티켓 코드가 GitHub 저장소에 올라와
+있어야 한다(push된 상태).</p>
+<h3>따라하기 1 — CI 워크플로를 만들고 도는 것을 확인한다</h3>
+<p><strong>① 워크플로를 만든다.</strong></p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="main에 push하면 빌드와 타입 검사가 자동으로 돌도록 GitHub Actions를 만들어줘.&#10;다 만들면 한 줄씩, 무슨 뜻인지 설명해줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">main에 push하면 빌드와 타입 검사가 자동으로 돌도록 GitHub Actions를 만들어줘.</span><span class="pl" style="padding-left:0ch">다 만들면 한 줄씩, 무슨 뜻인지 설명해줘.</span></code></pre></div>
+<p>위 프롬프트를 그대로 복사해 입력하면 된다. 다른 내용으로 바꿔서 해 보고 싶다면 자유롭게 바꿔도 좋다.</p>
+<p><strong>② 만들어진 파일을 읽는다.</strong></p>
+<p>먼저 파일이 놓이는 <strong>위치</strong>를 짚자. 워크플로 파일은 반드시 저장소의
+<code>.github/workflows/</code> 폴더 안에 있어야 GitHub이 인식한다. 폴더 이름이 점(<code>.</code>)으로 시작하는
+'숨김 폴더'라 파일 탐색기에선 안 보일 수 있는데, VS Code 탐색기에는 정상적으로 나타난다.
+경로가 정확한지 — <code>.github/workflows/ci.yml</code> — 를 먼저 확인한다.</p>
+<p>그다음 한 줄씩 읽는다. 앞의 용어 정리에서 읽어 본 예시와 비교하며 "무슨 사건에 무슨
+스텝"인지 짚는다. <code>on</code>은 어디 있고 무슨 사건이 적혔는지, <code>jobs</code> 아래 잡
+이름은 무엇인지, <code>steps</code>의 <code>-</code>가 몇 개이고 마지막 두 개가 타입 검사와 빌드인지. 명령이
+예시와 글자까지 같을 필요는 없다 — 프로젝트 설정에 따라 <code>pnpm build</code>일 수도,
+<code>pnpm --filter web build</code>일 수도 있다. 중요한 것은 <strong>그 줄이 무엇을 하는 줄인지 내가 말할 수
+있는가</strong>다. 모르겠으면 AI에게 "이 줄이 무슨 명령인지 설명해줘"라고 물으면 된다.
+<strong>"내가 이 파일을 읽고 설명할 수 있는가"</strong> 가 이 따라하기의 진짜 완료 조건이다.</p>
+<p><strong>③ 커밋하고, 내보낼 때 푸시를 시킨다.</strong></p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="방금 만든 워크플로 커밋해줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">방금 만든 워크플로 커밋해줘.</span></code></pre></div>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="푸시해줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">푸시해줘.</span></code></pre></div>
+<p>"푸시해줘" 한마디가 이 따라하기의 분기점이다. 워크플로는 <strong>main에 들어간 뒤부터</strong>
+저장소의 사건을 지켜보기 시작하므로, 이 push가 워크플로를 저장소에 올리는 동시에 그
+워크플로의 <strong>첫 실행을 띄운다.</strong></p>
+<p>push했으면 GitHub 저장소의 <strong>Actions 탭</strong>을 연다. 방금 push로 워크플로가 실행되는 것이
+보인다 — 클릭하면 스텝이 하나씩 진행되는 로그가 뜬다. <strong>내 컴퓨터가 아닌
+클라우드에서</strong> 우리 검사가 도는 장면이다. 초록 체크로 끝나는지 확인한다.</p>
+<p>이 장면을 학생이 <strong>직접 눈으로 보는 것</strong>이 이 장 첫머리의 '중립 클라우드' 개념을 체감하는 순간이다.
+내 노트북에서는 아무 명령도 치지 않았는데, GitHub의 어떤 리눅스 머신이 우리 코드를 받아
+의존성을 설치하고 타입을 대조하고 빌드까지 대신 돌리고 있다. 로그를 펼치면 스텝별로 초록 체크가 하나씩
+켜지는 것이 보이는데, 이게 바로 YAML의 <code>-</code> 목록이 위에서 아래로 실행되는 모습이다.
+파일에서 읽은 순서와 화면에서 도는 순서가 같다는 것을 확인시키면 개념이 딱 맞물린다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 첫 실행이 빨간 X로 끝나는 경우가 꽤 있다 — 대개 코드 버그가 아니라
+<strong>워크플로 설정 문제</strong>다(pnpm 버전, lock 파일 유무, 빌드 스크립트 이름 등). 당황하지 말고
+로그의 <strong>빨간 스텝</strong>을 펼쳐 마지막 에러 몇 줄을 복사해서 AI에게 "이 CI 로그를 보고 워크플로를
+고쳐줘"라고 주면 된다. 이 과정 자체가 좋은 경험이다 — "CI가 실패를 어떻게 알려 주는지, 그리고
+그 로그로 어떻게 고치는지"를 직접 겪고 나면, 검사가 실제로 일하고 있다는 것을 알게 된다.
+(고친 다음에도 커밋하고 "푸시해줘"라고 시킨다. 그 push가 다음 실행을 띄운다.)</p>
+</blockquote>
+<h3>완료 기준 체크리스트</h3>
+<ul>
+<li><code>.github/workflows/ci.yml</code> 이 있고, 각 스텝의 뜻을 설명할 수 있다</li>
+<li>GitHub Actions 탭에서 빌드와 타입 검사가 <strong>클라우드에서 도는 것</strong>을 봤다</li>
+<li>혼자 하는 지금 CI가 왜 <strong>경고등</strong>인지, 팀이 되면 무엇을 더 걸어야 잠금 장치가 되는지 말할 수 있다</li>
+</ul>
+<p>앞의 두 줄은 각각 이 장의 핵심과 맞물린다. 첫째 줄은 <strong>YAML 읽기</strong>(쓰기가 아니라 읽고
+설명하기), 둘째 줄은 <strong>검사의 자리</strong>(검사가 내 컴퓨터가 아니라 저장소 쪽에서 돈다). 셋째 줄은
+직접 실습하기보다 설명을 읽고 이해하는 항목이다 — 빨간 X만으로는 코드가 main에 들어가는 것을 막지
+못하고, 브랜치 보호를 걸어야 권고가 규칙이 된다.</p>
+<hr />
+<h2>18.5 정리</h2>
+<ul>
+<li>개인의 확인은 '내 컴퓨터'에서, 그 사람이 기억할 때만 작동한다. <strong>CI</strong>는 검사가 일어나는
+  자리를 옮긴다 — main에 push되는 순간, 중립 클라우드가 검사한다.</li>
+<li>그래서 내 컴퓨터에서 아무 저항 없이 커밋된 타입 오류를 CI가 잡는다. 검사를 저장소 쪽에
+  두는 이유가 이것이다 — 누가 올렸든, 무엇을 깜빡했든 같은 기준으로 판정된다.</li>
+<li><strong>빌드</strong>는 "내보낼 수 있는 형태로 만들어지는가"를, <strong>타입 검사</strong>는 "값의 종류가
+  어긋난 곳이 없는가"를 본다. 둘 다 판정이 명확해서 CI에 올릴 수 있다.
+  대신 "금액이 1원 틀린 것"은 못 잡는다 — 그건 코드리뷰어와 QA의 몫이다.</li>
+<li><strong>GitHub Actions</strong>는 워크플로(YAML)에 따라 실행된다 — "무슨 사건에 → 무슨 잡을 →
+  어떤 스텝으로." 작성은 AI, 우리는 읽는다. YAML은 들여쓰기가 문법이다.</li>
+<li>검사는 <strong>빌드와 타입 검사 둘로 시작</strong>해 검사를 하나씩 추가하며 키운다. 안 도는 거대한
+  파이프라인보다, 도는 작은 검사가 낫다.</li>
+<li>YAML을 읽는 세 규칙만 기억하면 된다 — <strong>콜론(이것은 이것이다)·들여쓰기(안에 속함)·
+  붙임표(목록의 한 항목)</strong>. 이 셋으로 워크플로 파일을 "언제(on) → 무엇을(jobs)"로 읽어 낸다.</li>
+<li>흐름은 <strong>작업 → 커밋 → push → 자동 검사</strong>다. push는 사람이 "푸시해줘"라고 할 때만
+  한다 — push가 검사를 띄우는 사건이기 때문이다.</li>
+<li>혼자 만드는 지금 CI는 <strong>경고등</strong>이다. 빨간 X가 떠도 코드는 이미 main에 있다. 그래도
+  값이 있다 — 내가 못 본 것을 기계가 즉시 알려 준다. 사람이 여럿이 되면 여기에
+  <strong>브랜치 보호</strong>를 걸어 경고등을 잠금 장치로 바꾼다. 그때 <strong>권고가 규칙으로</strong> 바뀐다.</li>
+</ul><div class="pager"><a class="prev" href="ch17.html"><span class="lbl">이전</span>17장. 버전 관리 — Git과 팀 규칙</a><a class="next" href="ch19.html"><span class="lbl">다음</span>19장. API 서버 배포 — Cloudflare Workers</a></div>
+<footer class="foot"><b>TechLead</b><a href="mailto:macro@prag-ai.com">macro@prag-ai.com</a></footer>
+</div><div class="byline"><b>오명운</b> · macro@prag-ai.com</div><script src="assets/app.js"></script></body></html>

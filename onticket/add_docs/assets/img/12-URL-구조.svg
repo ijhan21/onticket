@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 320" font-family="Pretendard, sans-serif">
+  <rect width="840" height="320" fill="#ffffff"/>
+  <text x="40" y="40" font-size="19" font-weight="700" fill="#0f1419">URL의 구조 — 프로토콜·호스트·포트</text>
+  <text x="40" y="62" font-size="13" fill="#5b6472">http://localhost:3000은 프로토콜·호스트·포트로 구성된 주소다</text>
+
+  <!-- URL 코드 (monospace, 각 조각을 tspan으로 색 구분) -->
+  <text x="420" y="128" font-size="34" font-weight="700" font-family="monospace" text-anchor="middle" letter-spacing="1">
+    <tspan fill="#0f1419">http</tspan><tspan fill="#5b6472">://</tspan><tspan fill="#c2410c">localhost</tspan><tspan fill="#5b6472">:</tspan><tspan fill="#0f1419">3000</tspan>
+  </text>
+
+  <!-- 밑줄 브래킷 (각 조각 아래에서 박스 위로 연결) -->
+  <!-- 프로토콜: http  중심 x≈300 → 박스중심 257 -->
+  <path d="M251,144 L251,156 L349,156 L349,144" fill="none" stroke="#c8ced6" stroke-width="1.5"/>
+  <line x1="300" y1="156" x2="257" y2="194" stroke="#c8ced6" stroke-width="1.5"/>
+  <!-- 호스트: localhost 중심 x≈448 → 박스중심 487 -->
+  <path d="M380,144 L380,156 L516,156 L516,144" fill="none" stroke="#c2410c" stroke-width="1.5"/>
+  <line x1="448" y1="156" x2="487" y2="194" stroke="#c2410c" stroke-width="1.5"/>
+  <!-- 포트: 3000 중심 x≈567 → 박스중심 702 -->
+  <path d="M535,144 L535,156 L599,156 L599,144" fill="none" stroke="#c8ced6" stroke-width="1.5"/>
+  <line x1="567" y1="156" x2="702" y2="194" stroke="#c8ced6" stroke-width="1.5"/>
+
+  <!-- 라벨 박스 3개 -->
+  <g>
+    <rect x="150" y="196" width="215" height="92" rx="10" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="257" y="226" font-size="15" font-weight="700" fill="#0f1419" text-anchor="middle">프로토콜</text>
+    <text x="257" y="250" font-size="12.5" fill="#5b6472" text-anchor="middle">통신 방법을 정한 규약</text>
+    <text x="257" y="270" font-size="12" fill="#48515e" text-anchor="middle">웹에서는 주로 http / https 사용</text>
+  </g>
+  <g>
+    <rect x="380" y="196" width="215" height="92" rx="10" fill="#fff" stroke="#c2410c" stroke-width="2"/>
+    <text x="487" y="226" font-size="15" font-weight="700" fill="#c2410c" text-anchor="middle">호스트</text>
+    <text x="487" y="250" font-size="12.5" fill="#5b6472" text-anchor="middle">연결할 컴퓨터의 주소</text>
+    <text x="487" y="270" font-size="12" fill="#48515e" text-anchor="middle">localhost = 내 PC</text>
+  </g>
+  <g>
+    <rect x="610" y="196" width="185" height="92" rx="10" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="702" y="226" font-size="15" font-weight="700" fill="#0f1419" text-anchor="middle">포트</text>
+    <text x="702" y="250" font-size="12.5" fill="#5b6472" text-anchor="middle">컴퓨터에서 연결할 서비스 번호</text>
+    <text x="702" y="270" font-size="12" fill="#48515e" text-anchor="middle">이 예에서는 3000번</text>
+  </g>
+</svg>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S09 입장 확인 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<div class="proto-strip" id="strip"></div>
+
+<main class="screen" aria-label="S09 입장 확인" id="screen"></main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  if (P.requireAdmin()) {
+    const screen = document.getElementById('screen');
+    const eid = P.param('id') || 'EV001';
+    const e = P.event(eid) || { 제목: '', 시작일시: '' };
+    const st = { editGate: !P.gate(), camera: true, waiting: false, result: null, nextTimeout: false, code: '' };
+
+    function resultHtml(r) {
+      if (r.result === '시간초과') return `<div class="result no" role="alert"><div class="result-head">${P.ICON.alert}<p class="h-title">판정을 받지 못했어요. 같은 티켓을 다시 확인해 주세요.</p></div>${next()}</div>`;
+      if (r.result === '허용') {
+        const o = r.order, c = r.checkin;
+        return `<div class="result ok" role="status">
+          <div class="result-head">${P.ICON.check}<p class="h-display">입장 확인됨</p></div>
+          <p class="h-title">${P.esc(o.등급)} · <span class="num">${o.수량}장</span></p>
+          <p class="num">${P.esc(o.qr_code)}</p>
+          <p class="caption muted num">${P.esc(c.게이트)} · ${P.fmtDate(c.입장일시)}</p>
+          ${next()}</div>`;
+      }
+      let line = '입장 불가. 결제가 완료된 티켓이 아니에요.', extra = '';
+      if (r.result === '다른공연') { line = '입장 불가. 다른 공연의 티켓이에요.'; extra = `<p>${P.esc(r.event ? r.event.제목 : '')}</p>`; }
+      if (r.result === '이미입장') { line = '입장 불가. 이미 입장한 티켓이에요.'; extra = r.checkin ? `<p class="num">${P.esc(r.checkin.게이트)} · ${P.fmtDate(r.checkin.입장일시)}</p>` : ''; }
+      return `<div class="result no" role="alert"><div class="result-head">${P.ICON.x}<p class="h-title">${line}</p></div>${extra}${next()}</div>`;
+    }
+    const next = () => '<button type="button" class="btn" id="next">다음 티켓 확인</button>';
+
+    function render() {
+      const head = `<header class="top">
+          <div class="top-left"><a class="wordmark" href="admin.html">온티켓<span class="wordmark-dot">.</span></a>
+            <span class="top-sub">${P.esc(e.제목)} · <span class="num">${P.fmtDate(e.시작일시)}</span></span></div>
+          <button type="button" class="top-link" data-logout>나가기</button>
+        </header>`;
+      let body;
+      if (st.editGate) {
+        body = `<form class="body" id="gate-form" novalidate>
+            <div class="field"><label class="label" for="gate">게이트</label>
+              <input class="input" id="gate" value="${P.esc(P.gate())}" autocomplete="off">
+              <p class="hint">이 기기가 맡은 게이트 이름을 입력해 주세요.</p></div>
+            <button type="submit" class="btn" id="gate-ok" ${P.gate() ? '' : 'disabled'}>확인하기</button>
+          </form>`;
+      } else {
+        body = `<div class="gate-bar"><span class="caption">게이트 <span class="strong">${P.esc(P.gate())}</span></span>
+            <button type="button" class="btn btn-small" id="gate-edit">바꾸기</button></div>
+          <div class="body">
+            <div class="camera" aria-label="QR 읽기">${st.waiting ? '<span class="spinner" aria-label="판정을 기다리는 중"></span>'
+              : st.camera ? P.ICON.scan : '<p>카메라를 쓸 수 없어요. 아래 칸에 티켓 코드를 입력해 주세요.</p>'}</div>
+            <form class="row" id="code-form" novalidate>
+              <div class="field"><label class="label" for="code">티켓 코드</label>
+                <input class="input num" id="code" placeholder="OT-0001-A1B2" autocomplete="off" autocapitalize="characters" value="${P.esc(st.code)}"></div>
+              <button type="submit" class="btn" ${st.waiting ? 'disabled' : ''}>확인하기</button>
+            </form>
+          </div>
+          ${st.result ? resultHtml(st.result) : ''}`;
+      }
+      screen.innerHTML = head + body;
+      P.bindLogout(screen);
+      const gf = document.getElementById('gate-form');
+      if (gf) {
+        const g = document.getElementById('gate'), ok = document.getElementById('gate-ok');
+        g.oninput = () => { ok.disabled = !g.value.trim(); };
+        gf.onsubmit = ev => { ev.preventDefault(); if (!g.value.trim()) return; P.gate(g.value.trim()); st.editGate = false; render(); };
+      }
+      const ge = document.getElementById('gate-edit'); if (ge) ge.onclick = () => { st.editGate = true; st.result = null; render(); };
+      const cf = document.getElementById('code-form');
+      if (cf) {
+        const c = document.getElementById('code');
+        c.oninput = () => { st.code = c.value; };
+        cf.onsubmit = ev => { ev.preventDefault(); if (c.value.trim()) judge(c.value.trim().toUpperCase()); };
+      }
+      const nx = document.getElementById('next'); if (nx) nx.onclick = () => { st.result = null; st.code = ''; render(); };
+    }
+
+    function judge(code) {
+      if (st.editGate || st.waiting) return;
+      st.waiting = true; st.result = null; st.code = code; render();
+      setTimeout(() => {
+        st.waiting = false;
+        if (st.nextTimeout) { st.result = { result: '시간초과' }; st.nextTimeout = false; renderStrip(); }
+        else st.result = P.checkin(eid, code, P.gate());
+        render();
+      }, 600);
+    }
+    function read(kind) {
+      const code = P.sampleCode(eid, kind);
+      if (!code) { alertless(kind); return; }
+      judge(code);
+    }
+    function alertless(kind) {
+      // 이 공연에 맞는 예시 주문이 없을 때: 띠에만 알린다
+      document.querySelector('#strip .proto-head span:last-child').textContent = `이 공연에는 '${kind}' 예시 주문이 없다. 다른 공연으로 열어 본다`;
+    }
+
+    function renderStrip() {
+      P.strip(document.getElementById('strip'), 'S09 입장 확인 · 카메라로 읽은 것처럼 티켓을 보낸다. 코드 칸에 직접 넣어도 된다', [
+        { label: 'QR 읽기 흉내', buttons: [
+          { text: '이 공연 결제완료 티켓', onClick: () => read('허용') },
+          { text: '다른 공연 결제완료 티켓', onClick: () => read('다른공연') },
+          { text: '이미 입장한 티켓', onClick: () => read('이미입장') },
+          { text: '결제완료 아닌 주문(환불·취소)', onClick: () => read('불가') },
+          { text: '없는 코드 OT-9999-FFFF', onClick: () => judge('OT-9999-FFFF') },
+        ] },
+        { label: '그 밖', buttons: [
+          { text: '다음 판정 응답 없음', pressed: st.nextTimeout, onClick: () => { st.nextTimeout = !st.nextTimeout; renderStrip(); } },
+          { text: st.camera ? '카메라 못 씀으로' : '카메라 다시 켜기', onClick: () => { st.camera = !st.camera; renderStrip(); render(); } },
+          { text: '게이트 처음부터', onClick: () => { P.gate(''); st.editGate = true; st.result = null; render(); } },
+          { text: '비밀번호 확인 풀림', onClick: () => { P.setAdmin(false); P.requireAdmin(); } },
+          { text: '다른 공연: 모네 특별전(입장완료 예시 있음)', href: 'admin-checkin.html?id=EV006' },
+          { text: 'S07 공연 현황', href: 'admin.html' },
+        ] },
+      ]);
+    }
+    renderStrip();
+    render();
+  }
+</script>
+</body>
+</html>

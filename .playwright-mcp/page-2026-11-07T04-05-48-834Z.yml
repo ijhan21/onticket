@@ -1,0 +1,9 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - heading "온티켓 (OnTicket)" [level=1] [ref=e4]
+      - paragraph [ref=e5]: 프론트엔드 - API 서버 통신 뼈대 검증
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: API 서버 (http://localhost:8787) 상태
+        - generic [ref=e8]: ok
+  - alert [ref=e10]

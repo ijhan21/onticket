@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>결제대행 결제창 흉내 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<!-- 이 화면 전체가 프로토타입 전용이다. 실제 결제창은 결제대행이 정하며 화면기획서 밖이다. -->
+<div class="proto-strip" id="strip"></div>
+<main class="proto-strip" id="view" aria-label="결제대행 결제창 흉내"></main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  const id = P.param('order');
+  const o = id && P.order(id);
+  const view = document.getElementById('view');
+
+  P.strip(document.getElementById('strip'), '결제대행 결제창을 흉내 낸 자리다. 온티켓 화면이 아니라 화면기획서에 없다. 아래에서 결제 결과를 골라 S03·S04로 간다', []);
+
+  if (!o) {
+    view.innerHTML = '<p>주문이 없다. <a class="link" href="home.html">S01로 돌아가기</a></p>';
+  } else {
+    const e = P.event(o.event_id) || {};
+    const back = `eid=${o.event_id}&tt=${o.ticket_type_id}&qty=${o.수량}&email=${encodeURIComponent(o.email)}`;
+    view.innerHTML = `
+      <p class="caption">${P.esc(e.제목)} · ${P.esc(o.등급)} ${o.수량}장 · 결제 요청 ${P.won(o.결제금액)} · ${P.esc(o.order_id)}</p>
+      <div class="proto-group"><span class="proto-group-label">결제 결과</span>
+        <button class="proto-btn" type="button" id="ok">결제 마침, 서버 승인</button>
+        <button class="proto-btn" type="button" id="pending">결제 마침, 서버 승인 아직</button>
+        <button class="proto-btn" type="button" id="fail">결제 실패</button>
+        <button class="proto-btn" type="button" id="cancel">고객이 결제 취소</button>
+        <button class="proto-btn" type="button" id="reject">결제 마침, 그사이 수량 부족으로 승인 거절</button>
+      </div>`;
+    document.getElementById('ok').onclick = () => {
+      const r = P.approve(o.order_id);
+      location.href = r.ok ? 'complete.html?order=' + o.order_id : 'fail.html?reason=reject&' + back;
+    };
+    document.getElementById('pending').onclick = () => { location.href = 'complete.html?order=' + o.order_id; };
+    document.getElementById('fail').onclick = () => { P.cancel(o.order_id); location.href = 'fail.html?reason=fail&' + back; };
+    document.getElementById('cancel').onclick = () => { P.cancel(o.order_id); location.href = 'fail.html?reason=cancel&' + back; };
+    document.getElementById('reject').onclick = () => { P.cancel(o.order_id); location.href = 'fail.html?reason=reject&' + back; };
+  }
+</script>
+</body>
+</html>

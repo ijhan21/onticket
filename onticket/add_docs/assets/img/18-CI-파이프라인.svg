@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 540" font-family="Pretendard, sans-serif">
+  <rect width="840" height="540" fill="#ffffff"/>
+  <text x="40" y="40" font-size="19" font-weight="700" fill="#0f1419">CI 검사 환경 — 저장소와 연결된 클라우드 서버</text>
+  <text x="40" y="62" font-size="13" fill="#5b6472">내 컴퓨터에서 커밋하고 push하면, 공통 서버에서 변경 내용을 검사한다</text>
+
+  <defs>
+    <marker id="c19" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 Z" fill="#8a8f98"/></marker>
+    <marker id="c19o" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 Z" fill="#c2410c"/></marker>
+  </defs>
+
+  <!-- ================= LOCAL ZONE ================= -->
+  <rect x="40" y="90" width="760" height="180" rx="14" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="62" y="118" font-size="13" font-weight="700" fill="#0f1419">내 컴퓨터 (로컬)</text>
+
+  <!-- 코드를 고친다 -->
+  <rect x="310" y="132" width="220" height="46" rx="10" fill="#fff" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="420" y="160" font-size="13.5" font-weight="700" fill="#0f1419" text-anchor="middle">코드를 고친다</text>
+
+  <line x1="420" y1="178" x2="420" y2="200" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#c19)"/>
+
+  <!-- 커밋 -> push / PR -->
+  <rect x="300" y="202" width="240" height="46" rx="10" fill="#fff" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="420" y="230" font-size="13.5" font-weight="700" fill="#0f1419" text-anchor="middle">커밋 → push / PR</text>
+
+  <!-- 로컬 메모 -->
+  <rect x="590" y="196" width="188" height="58" rx="10" fill="#fff" stroke="#c8ced6" stroke-width="1.2"/>
+  <text x="684" y="219" font-size="11" fill="#0f1419" text-anchor="middle">이 단계에서는 CI 검사가</text>
+  <text x="684" y="235" font-size="11" fill="#0f1419" text-anchor="middle">아직 실행되지 않음</text>
+  <text x="684" y="250" font-size="11" font-weight="700" fill="#5b6472" text-anchor="middle">→ 오류가 있는 코드도 전송됨</text>
+  <line x1="542" y1="225" x2="588" y2="225" stroke="#8a8f98" stroke-width="1.5" marker-end="url(#c19)"/>
+
+  <!-- transition arrow between zones (emphasis) -->
+  <line x1="420" y1="270" x2="420" y2="310" stroke="#c2410c" stroke-width="2.2" marker-end="url(#c19o)"/>
+  <text x="438" y="295" font-size="11.5" font-weight="700" fill="#c2410c">저장소로 전송</text>
+
+  <!-- ================= CLOUD ZONE ================= -->
+  <rect x="40" y="312" width="760" height="200" rx="14" fill="#fbf7f4" stroke="#e0cabd" stroke-width="1.5"/>
+  <text x="62" y="340" font-size="13" font-weight="700" fill="#c2410c">저장소와 연결된 클라우드 서버 — 검사와 판정</text>
+
+  <!-- CI -->
+  <rect x="270" y="354" width="300" height="60" rx="10" fill="#fff" stroke="#c2410c" stroke-width="2"/>
+  <text x="420" y="378" font-size="14" font-weight="700" fill="#c2410c" text-anchor="middle">CI (빌드 · 타입 검사)</text>
+  <text x="420" y="398" font-size="11.5" fill="#5b6472" text-anchor="middle">전송된 모든 변경을 공통 서버에서 검사</text>
+
+  <!-- CI 옆 메모 -->
+  <rect x="590" y="354" width="188" height="60" rx="10" fill="#fff" stroke="#e0cabd" stroke-width="1.2"/>
+  <text x="684" y="377" font-size="11" fill="#0f1419" text-anchor="middle">누가 변경했든,</text>
+  <text x="684" y="393" font-size="11" fill="#0f1419" text-anchor="middle">무엇을 빠뜨렸든</text>
+  <text x="684" y="408" font-size="11" font-weight="700" fill="#c2410c" text-anchor="middle">같은 기준으로 검사</text>
+  <line x1="570" y1="384" x2="588" y2="384" stroke="#8a8f98" stroke-width="1.5" marker-end="url(#c19)"/>
+
+  <line x1="420" y1="414" x2="420" y2="428" stroke="#8a8f98" stroke-width="1.8"/>
+
+  <!-- 판정 결과 -->
+  <rect x="150" y="438" width="250" height="56" rx="10" fill="#fff" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="275" y="462" font-size="13" font-weight="700" fill="#0f1419" text-anchor="middle">초록 체크 표시</text>
+  <text x="275" y="481" font-size="11.5" fill="#5b6472" text-anchor="middle">→ 병합 허용</text>
+
+  <rect x="440" y="438" width="250" height="56" rx="10" fill="#fff" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="565" y="462" font-size="13" font-weight="700" fill="#0f1419" text-anchor="middle">빨간 X</text>
+  <text x="565" y="481" font-size="11.5" fill="#5b6472" text-anchor="middle">→ 병합 차단</text>
+
+  <path d="M420,428 L275,428 L275,436" fill="none" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#c19)"/>
+  <path d="M420,428 L565,428 L565,436" fill="none" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#c19)"/>
+</svg>

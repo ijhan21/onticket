@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6장. 디자인팀② — 프로토타입, 그리고 검토하는 사람을 분리한다 — AI Driven Development</title>
+<link rel="stylesheet" href="assets/style.css">
+</head><body data-prev="ch05.html" data-next="ch07.html"><div class="wrap">
+<div class="nav"><a class="home" href="index.html">AI Driven Development</a><span class="spacer"></span><a class="btn" href="ch05.html">← 이전</a><a class="btn" href="index.html">목차</a><a class="btn" href="ch07.html">다음 →</a></div>
+<h1>6장. 디자인팀② — 프로토타입, 그리고 검토하는 사람을 분리한다</h1>
+<blockquote class="intro">
+<p>이 장을 마치면 온티켓의 모든 화면을 <code>design/</code>에 시안으로 만들고, 화면기획서의 흐름대로
+이동할 수 있는 <strong>클릭 프로토타입</strong>을 완성할 수 있다. Playwright MCP를 연결하고,
+편집 권한 없이 <strong>브라우저를 조작하는</strong> 디자인 리뷰어 서브에이전트(Subagent)를 만든다.
+리뷰어가 세 가지 화면 폭(1440·768·375px)에서 흐름과 상태를 확인하고 작성한
+등급별 검토 보고서를 받은 뒤, 반영할 항목을 골라 디자이너에게 수정을 맡긴다.</p>
+</blockquote>
+<hr />
+<h2>6.1 개념 — 눌러 보고, 만든 사람이 검사하지 않는다</h2>
+<h3>프로토타입 — 진짜가 되기 전에 흐름부터 맞춘다</h3>
+<p>지금 가진 것은 홈 화면 시안 하나(<code>design/home.html</code>)다. 카드를 눌러도 아무 일도
+일어나지 않는다 — 시안은 <strong>한 화면이 어떻게 보이는가</strong>만 답하기 때문이다. 그런데
+서비스는 화면 한 장이 아니라 화면들의 <strong>이어짐</strong>이다. 이벤트를 고르면 상세로, 예매하기를
+누르면 예매로, 결제를 마치면 완료로. 이 이어짐을 눌러 볼 수 있게 만든 것이
+<strong>프로토타입(prototype)</strong> 이다.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>시안</th>
+<th>프로토타입</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>답하는 질문</td>
+<td>한 화면이 어떻게 <strong>보이는가</strong></td>
+<td>화면들이 어떻게 <strong>이어지는가</strong></td>
+</tr>
+<tr>
+<td>버튼을 누르면</td>
+<td>아무 일도 없다</td>
+<td>다음 화면으로 넘어간다</td>
+</tr>
+<tr>
+<td>데이터</td>
+<td>임시로 채운 표본값</td>
+<td>똑같이 표본값 — 서버도 DB도 없다</td>
+</tr>
+<tr>
+<td>확인하는 것</td>
+<td>색·글꼴·배치</td>
+<td>순서, 빠진 화면, 되돌아가는 길, 상태</td>
+</tr>
+</tbody>
+</table>
+<p>프로토타입은 <strong>껍데기</strong>다. 등급 옆의 잔여 수량은 아무렇게나 채운 값이고, 결제하기를
+눌러도 돈이 오가지 않는다. 확인하려는 것은 데이터가 아니라 <strong>흐름</strong>이다 — 예매하는
+고객이 밟는 화면의 순서가 자연스러운가, 중간에 빠진 화면은 없는가, 잘못 골랐을 때
+돌아갈 길은 있는가.</p>
+<p>왜 지금 하는가. 껍데기 단계에서 흐름을 바로잡는 비용은 거의 0이다. 링크 몇 개를 다시
+이으면 그만이다. 그러나 진짜 데이터가 흐르는 화면을 다 만든 뒤에 "순서가 이상하다"를
+깨달으면 서버와 화면을 함께 뜯어고쳐야 한다. <strong>싸게 고칠 수 있을 때 흐름을 확정한다</strong> —
+프로토타입이 존재하는 이유다.</p>
+<p>하나 더 있다. <code>docs/화면기획서.md</code>에는 화면 흐름과 상태가 <strong>글로</strong> 적혀 있다. "매진
+등급은 고를 수 없다", "등급·수량·이메일 중 하나라도 비면 예매하기 버튼은 비활성". 글은
+읽고 고개를 끄덕이면 넘어가지만, 프로토타입은 <strong>눌러 보는 순간 검증된다.</strong> 매진 등급을
+눌렀는데 골라진다면 기획서와 시안 중 하나가 틀린 것이다. 글로 쓴 약속이 지켜졌는지를
+손가락으로 확인하는 단계다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> "어차피 나중에 진짜 화면을 만들 텐데 왜 가짜를 또 만드나" 하는 의문이
+나오기 쉽다. 답은 순서다. 이 프로토타입은 버려지는 것이 아니라, 뒤에서 진짜 화면을
+만들 때 <strong>모양과 흐름의 기준 자료</strong>가 된다. 그때는 "어떻게 보이고 어떻게 이어지는가"를
+다시 고민하지 않고, 이미 확정된 것을 데이터에 연결하기만 하면 된다.</p>
+</blockquote>
+<h3>자기 검토는 왜 검토가 아닌가</h3>
+<p>시안을 만든 디자이너(스킬)에게 "방금 만든 화면 검토해봐"라고 하면 어떻게 될까.
+대체로 후한 평가가 돌아온다. 아부가 아니다 — <strong>같은 선입견으로 만들고 같은
+선입견으로 보기 때문</strong>이다. 만들 때 "이 정도면 균형 잡혔다"고 판단한 그 기준으로
+검토하니, 같은 결론이 나올 수밖에 없다.</p>
+<p>이 현상에는 이름이 있다. 사람이 자기가 내린 판단을 다시 볼 때, 그 판단이 옳다는
+증거만 눈에 들어오고 반대되는 증거는 흐릿해지는 경향을 <strong>확증 편향(confirmation
+bias)</strong> 이라 한다. 디자이너 스킬도 마찬가지다. "포인트 색을 여기에 썼다"는 결정을
+내린 주체가 그 화면을 다시 보면, 그 결정을 정당화하는 방향으로 화면을 읽는다.
+자기가 쓴 글에서 자기 오타를 못 잡는 것과 정확히 같은 원리다 — 머릿속에 '있어야
+할 글자'가 이미 있으니, 눈은 그것을 본다. 만든 사람의 눈은 '만들려던 것'을 보고,
+검토하는 사람의 눈은 '실제로 있는 것'을 본다.</p>
+<p>사람으로 이루어진 조직은 이 문제를 오래전부터 알았고, 답도 오래전에 냈다 — <strong>만든 사람과
+검사하는 사람을 분리한다.</strong> 개발자가 아니라 QA가 검수한다. 코드를 짠 사람이 아니라
+동료가 그 변경을 리뷰한다. 분리 자체가 품질 장치다.</p>
+<p>소프트웨어 팀은 이 원리를 여러 층에 심어 두었다. 코드를 짠 사람이 아니라 동료가
+그 변경(Pull Request)을 검토한다. 기능을 만든 개발자가 아니라 QA가 완료 기준을
+하나씩 대조한다. 서비스를 만든 팀이 아니라 보안팀이 침투 테스트를 한다. 배포는
+만든 사람이 아니라 파이프라인이 검사를 통과시킨 것만 올린다. 공통점은 하나다 —
+<strong>판단을 내린 주체는 그 판단의 심판이 될 수 없다.</strong> 그래서 팀은 '검토하는 사람'을
+아예 다른 자리에 앉힌다.</p>
+<p>우리 AI 팀도 같은 구조를 만든다. 시안과 프로토타입은 디자이너 스킬이 만들고,
+검토는 <strong>별도의 서브에이전트</strong>가 한다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 이 절의 핵심은 "리뷰어가 더 똑똑해서 분리하는 게 아니다"라는
+점이다. 같은 모델(Claude)이 만들고 같은 모델이 리뷰한다 — 두뇌는 동일하다.
+분리가 힘을 갖는 건 <strong>역할과 시야를 갈랐기 때문</strong>이다. 만든 맥락에서 떼어 내
+"너는 오직 흠을 찾는 사람"이라는 자리에 앉히면, 같은 두뇌라도 다른 것을 본다.
+"어차피 같은 AI인데 의미가 있나" 하고 헷갈리기 쉬운데, 바로 이 지점이 답이다.</p>
+</blockquote>
+<h3>왜 '눈'으로 보는가 — 코드를 읽어서는 알 수 없는 것</h3>
+<p>디자인 리뷰어에게는 특별한 점이 하나 더 있다. <strong>화면을 눈으로 본다</strong>는 것이다.
+코드(HTML/CSS)를 읽는 것만으로는 절대 알 수 없는 문제들이 있기 때문이다.</p>
+<ul>
+<li>제목이 길어지자 버튼과 <strong>겹쳐</strong> 보인다</li>
+<li>모바일 폭에서 가격이 <strong>잘려서</strong> "99,0…"으로 보인다</li>
+<li>어두운 배경 위 회색 글씨의 <strong>대비가 낮아</strong> 안 읽힌다</li>
+<li>카드 높이가 제각각이라 줄이 <strong>들쭉날쭉</strong>하다</li>
+</ul>
+<p>코드는 전부 '정상'이다. 화면이 이상할 뿐이다. 왜 이런 일이 생기냐면, 화면의
+최종 모습은 코드 한 줄이 결정하는 게 아니라 <strong>여러 값이 브라우저 안에서 만나
+계산된 결과</strong>이기 때문이다. 글자 길이, 화면 폭, 글꼴, 줄바꿈 규칙, 이미지 로딩
+여부가 그 순간 함께 작용해 배치가 정해진다. <code>.card { height: auto }</code> 라는
+한 줄은 코드로는 완벽하게 옳지만, 실제로 카드 세 개에 담긴 글자 수가 다르면
+높이가 제각각이 된다. 코드를 아무리 읽어도 "고객 화면에서 실제로 어떻게 보이는가"는
+알 수 없다. 그건 렌더링해서 눈으로 봐야만 안다.</p>
+<p>'렌더링(rendering)'이라는 말도 짚어 두자. 코드(설계도)를 실제 화면(그림)으로
+그려 내는 과정을 렌더링이라 한다. 브라우저가 하는 일이 바로 이것이다 — HTML과
+CSS라는 글자 명세를 받아, 픽셀로 칠해진 화면으로 바꾼다. 같은 코드라도 브라우저와
+화면 폭에 따라 렌더링 결과가 달라지기 때문에, "코드가 맞다"와 "화면이 맞다"는
+서로 다른 검증이다. 리뷰어가 담당하는 건 후자다.</p>
+<p>그러면 리뷰어는 렌더링된 화면을 어떻게 보는가. 한 가지 방법은 사람이 브라우저에서
+폭을 바꿔 가며 스크린샷을 찍어 폴더에 넣어 주는 것이다. 되기는 하지만, 화면이 열
+개이고 폭이 세 가지면 사람이 찍어서 전달해야 할 스크린샷이 너무 많다. 게다가 정지된 그림으로는
+"이 버튼을 누르면 어디로 가는가"를 볼 수 없다. 그래서 우리는 <strong>리뷰어에게 브라우저를
+직접 쥐여 준다.</strong> 리뷰어가 스스로 주소를 열고, 창 폭을 1440·768·375로 바꿔 보고,
+스크린샷을 찍고, 버튼을 <strong>눌러 본다.</strong> 화면은 보는 기기에 따라 다르게 배치되므로
+(이를 <strong>반응형</strong>이라 한다) 한 가지 폭만 보고 통과시키면 나머지 두 폭의 사고를
+놓친다. 온티켓 고객의 대부분은 휴대폰으로 예매한다는 점을 기억하자.</p>
+<p>보기만 하던 눈에 <strong>손가락</strong>이 생긴 셈이다. 다만 이 손가락의 범위를 정확히 해 둔다.
+리뷰어의 손가락은 <strong>화면을 누를 뿐, 파일을 고치지는 못한다.</strong> 고객이 예매 버튼을
+아무리 눌러도 온티켓의 코드가 바뀌지 않는 것과 같다. 브라우저를 조작하는 것과
+<code>design/home.html</code>을 편집하는 것은 전혀 다른 능력이고, 우리는 앞의 것만 준다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 겹침·잘림·대비·정렬은 말로만 설명하면 잘 안 와닿는다. 실제로
+홈 시안을 크롬에서 열고 창 폭을 휴대폰만큼 줄여 보면, 가격이나 긴 제목이 깨지는
+순간이 눈에 들어온다 — "아 이래서 눈으로 보는구나"가 바로 와닿는 지점이다. 카드
+하나에 일부러 아주 긴 공연 제목을 넣어 두면 겹침을 직접 재현해 보기 쉽다.</p>
+</blockquote>
+<hr />
+<h2>6.2 용어 정리</h2>
+<h3>프로토타입 (Prototype)</h3>
+<p><strong>진짜가 되기 전에 흐름부터 맞춰 보는 껍데기</strong>다. proto는 '처음의', type은 '형(型)'
+— 본제품에 앞서 만드는 첫 모형이라는 뜻이다. 자동차 회사가 양산 전에 시험차를 먼저
+굴려 보는 것과 같다. 우리가 만드는 것은 그중에서도 <strong>클릭 프로토타입</strong>, 곧 화면마다
+HTML 파일을 하나씩 두고 버튼과 카드에 링크를 걸어 눌러서 넘어가게 한 것이다. 시안이
+'모양은 진지하게, 기능은 비워 둔' 것이었다면, 프로토타입은 거기에 <strong>화면 전환과 상태
+표현만</strong> 얹은 것이다. 데이터는 여전히 표본값이고, 서버도 DB도 없다.</p>
+<h3>서브에이전트(Subagent)란 무엇인가 — 스킬과 무엇이 다른가</h3>
+<p>바로 앞에서 디자이너는 <strong>스킬(Skill)</strong> 로 만들었는데, 이번 리뷰어는
+<strong>서브에이전트(Subagent)</strong> 로 만든다. 둘 다 "역할을 정의한 마크다운 파일"이라는
+점은 같지만, 결정적인 차이가 하나 있다.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>스킬(Skill)</th>
+<th>서브에이전트(Subagent)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>파일 위치</td>
+<td><code>.claude/skills/&lt;이름&gt;/SKILL.md</code></td>
+<td><code>.claude/agents/&lt;이름&gt;.md</code></td>
+</tr>
+<tr>
+<td>실행 방식</td>
+<td>지금 대화하는 Claude가 그 지침을 <strong>직접 따른다</strong></td>
+<td><strong>독립된 일꾼</strong>이 자기 창(맥락)에서 따로 일한다</td>
+</tr>
+<tr>
+<td>도구 권한</td>
+<td>부르는 쪽(사람)이 가진 도구를 함께 쓴다</td>
+<td><strong>자기만의 도구 목록</strong>을 가진다 (<code>tools</code>로 제한)</td>
+</tr>
+<tr>
+<td>대화 맥락</td>
+<td>지금까지의 대화를 그대로 안다</td>
+<td>모른다. 맡은 지시만 들고 <strong>새 맥락</strong>에서 시작한다</td>
+</tr>
+<tr>
+<td>비유</td>
+<td>내가 참고하는 '업무 매뉴얼'</td>
+<td>매뉴얼을 들고 옆방에서 일하는 '다른 직원'</td>
+</tr>
+</tbody>
+</table>
+<p>핵심은 <strong>서브에이전트는 도구 권한을 따로 가진다</strong>는 것이다. 이게 이 장 전체의
+키다. 디자이너 스킬은 부르는 Claude와 같은 손(도구)을 쓰므로 편집도 할 수
+있지만, 리뷰어 서브에이전트는 <strong>자기 손에 편집 도구가 아예 없게</strong> 만들 수 있다.
+"고치지 마"라는 부탁이 아니라 "고칠 손이 없다"는 구조 — 이것이 스킬이 아니라
+서브에이전트로 리뷰어를 만드는 이유다.</p>
+<p>이유가 하나 더 있다. 서브에이전트는 <strong>지금까지의 대화를 모르는 새 맥락</strong>에서 일한다.
+디자이너가 어떤 사정으로 그렇게 그렸는지, 우리가 앞에서 무엇을 합의했는지 모른 채 화면만
+본다. 만드는 역할에게는 이것이 불편이지만(고칠 때마다 사정을 다시 설명해야 한다), 검토하는
+역할에게는 <strong>장점</strong>이다. 제작 과정의 판단에 영향을 덜 받고 결과를 볼 수 있기 때문이다. 그리고 리뷰어가 열어 본
+화면과 찍은 스크린샷의 기록은 리뷰어의 맥락에만 남고, 메인 대화에는 <strong>리포트만</strong> 돌아온다.</p>
+<p>'서브(sub)'는 '아래·하위'라는 뜻이다. 사람이 큰 목표를 주고 메인 Claude가 일을
+진행하다가, 특정 검토가 필요하면 그 일부를 <strong>하위 일꾼(서브에이전트)</strong> 에게
+떼어 맡긴다. 서브에이전트는 자기 몫의 일을 자기 창에서 마치고, 결과(리포트)만
+메인에게 돌려준다. 옆방 직원에게 "이 서류만 검토해서 결과지 갖고 와"라고 시키는
+것과 같다. 그 직원의 책상에는 우리가 허락한 도구만 놓여 있다.</p>
+<h3>서브에이전트 파일의 생김새</h3>
+<p>서브에이전트는 <code>.claude/agents/&lt;이름&gt;.md</code> 파일 하나로 정의된다.
+맨 위 머리말(frontmatter)에 세 가지를 적는다.</p>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>역할</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>서브에이전트의 이름 (호출할 때 쓰인다)</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>언제 이 에이전트에게 일을 맡길지 — Claude가 이걸 보고 위임을 판단한다</td>
+</tr>
+<tr>
+<td><code>tools</code></td>
+<td><strong>이 에이전트가 쓸 수 있는 도구 목록</strong> — 여기가 권한 설계의 핵심이다</td>
+</tr>
+</tbody>
+</table>
+<p>'머리말(frontmatter)'은 문서 맨 앞에 <code>---</code> 두 줄 사이로 끼워 넣는 <strong>설정
+구역</strong>이다. 본문이 사람에게 주는 지시라면, 머리말은 시스템에게 주는 메타 정보다.
+블로그 글 맨 위에 제목·작성일·태그를 적어 두는 항목을 떠올리면 된다. 세 항목의
+성격을 나눠 보면 이렇다.</p>
+<ul>
+<li><code>name</code> 은 이 일꾼의 <strong>식별표</strong>다. <code>design-reviewer</code>처럼 하는 일이 드러나는
+  이름을 준다. 나중에 "design-reviewer한테 맡겨줘"라고 부를 때 이 이름을 쓴다.</li>
+<li><code>description</code> 은 <strong>언제 부를지를 적은 안내문</strong>이다. 사람이 명시적으로 부르지
+  않아도, 메인 Claude가 "이건 디자인 검토구나" 하고 알아서 위임할 수 있게 하는
+  힌트다. 그래서 "디자인 리뷰, 시안 검토, 화면 QA"처럼 <strong>불릴 만한 상황의
+  단어들</strong>을 넉넉히 적어 두는 게 좋다.</li>
+<li><code>tools</code> 는 이 일꾼의 <strong>책상 위 연장 목록</strong>이다. 여기에 적힌 것만 쓸 수 있다.
+  리뷰어 설계의 전부가 사실상 이 한 줄에 있다. 함정이 하나 있다 — <strong><code>tools</code> 줄을
+  아예 생략하면 '아무 도구도 없음'이 아니라 '전부 물려받음'이 된다.</strong> 편집 도구까지
+  통째로 상속한다. 그래서 검토하는 역할은 이 줄을 반드시 <strong>명시해서</strong> 적는다.</li>
+</ul>
+<h3>Playwright와 MCP — AI에게 브라우저를 쥐여 준다</h3>
+<p><strong>Playwright(플레이라이트)</strong> 는 마이크로소프트가 만든 <strong>브라우저 자동화 도구</strong>다.
+사람이 마우스와 키보드로 하는 일 — 주소 열기, 클릭, 창 크기 바꾸기, 화면 캡처 — 을
+프로그램이 대신 한다. 원래는 "이 버튼을 누르면 결제 화면으로 가는가"를 사람 대신
+자동으로 확인하려고 만든 도구다.</p>
+<p><strong>MCP(Model Context Protocol)</strong> 는 Claude Code의 여섯 가지 기능을 훑을 때 이름만 보고
+지나간, <strong>AI를 프로젝트 폴더 밖의 세계와 잇는 통로</strong>다. 그때는 "연결 실습은 뒤에서"라고
+미뤄 두었는데, 그 첫 실습이 지금이다. <strong>Playwright MCP</strong>는 그 통로로 <strong>AI에게 브라우저를
+쥐여 주는</strong> MCP 서버다. 여기서 '서버'는 거창한 컴퓨터가 아니라, Claude Code와 브라우저
+사이에서 통역을 맡는 작은 연결 프로그램이다. 이것을 연결하면 Claude Code의 도구 목록에
+"주소 열기", "누르기", "스크린샷 찍기" 같은 브라우저 도구가 새로 생긴다.</p>
+<h3>Node.js와 npx — 설치할 때는 필요 없다던 것이 왜 지금 필요한가</h3>
+<p><strong>Node.js(노드제이에스)</strong> 는 브라우저 밖에서 JavaScript를 실행하는 프로그램이다. 원래
+JavaScript는 웹 브라우저 안에서만 돌던 언어였다(버튼을 누르면 반응하는 화면 동작 같은
+것). 2009년에 이 언어를 브라우저 밖으로 꺼내 서버·PC에서도 돌게 만든 것이 Node.js이고,
+오늘날 수많은 개발 도구가 이 위에서 돌아간다.</p>
+<p>Claude Code를 설치할 때는 "Node.js는 필요 없다"고 했다. 그 말은 지금도 맞다. Claude Code는
+운영체제용 실행 파일을 직접 설치하는 방식(네이티브 설치)이라 Node 없이 깔린다. 달라진 것은
+우리가 하려는 일이다. <strong>그때는 도구를 깔았고, 지금은 AI가 쓸 브라우저 조종 프로그램을
+돌려야 한다.</strong> Playwright MCP가 JavaScript로 만들어져 있어 Node 위에서 돈다. 그리고
+이번 한 번으로 끝나지 않는다 — 뒤에서 세울 온티켓의 앱들도, 그 앱을 내 컴퓨터에서
+돌려 보는 개발 도구들도 전부 Node 위에서 돈다. 어차피 깔아야 할 기반 설비를, 처음
+필요해진 지금 까는 것이다.</p>
+<p>Node.js를 설치하면 두 가지가 함께 딸려 온다.</p>
+<table>
+<thead>
+<tr>
+<th>이름</th>
+<th>무엇</th>
+<th>이 장에서의 쓰임</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>npm</strong></td>
+<td>Node Package Manager. 남이 만들어 공개해 둔 코드 꾸러미(<strong>패키지</strong>)를 내려받고 관리하는 도구. 패키지가 쌓인 거대한 창고를 npm 레지스트리(registry)라 한다</td>
+<td>직접 쓰지는 않는다. 이름만 알아 둔다</td>
+</tr>
+<tr>
+<td><strong>npx</strong></td>
+<td>패키지를 <strong>설치해 두지 않고 그 자리에서 받아 바로 실행</strong>하는 도구</td>
+<td>Playwright MCP와 시안 서버를 이걸로 돌린다</td>
+</tr>
+</tbody>
+</table>
+<p>npx가 왜 편한가. 어떤 프로그램을 한두 번 쓰려고 컴퓨터에 영구히 설치하는 것은 번거롭다.
+<code>npx 패키지이름</code>이라고 치면, 창고에서 그 패키지를 받아 와 곧바로 실행해 준다. 패키지를
+프로젝트에 정식으로 들여 관리하는 법은 앱의 뼈대를 세울 때 다시 만난다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> "처음 설치할 땐 Node 필요 없다더니 왜 지금 깔라고 하지?"라는 의문이 들
+수 있다. 이 의문이 든다면 오히려 좋은 신호다 — 설치 때의 설명을 제대로 이해했다는 뜻이다.
+Claude Code(일해 주는 도구)와 Node(그 도구가 부릴 프로그램, 그리고 우리가 만들 앱이
+올라설 바닥)는 별개다. 이 구분을 잡아 두면 뒤의 설치 단계가 매끄럽다.</p>
+</blockquote>
+<h3>localhost와 포트</h3>
+<p>이 장에서 처음으로 <code><a href="http://localhost:4173" target="_blank" rel="noopener noreferrer">http://localhost:4173</a></code> 같은 주소를 쓴다. <strong>localhost(로컬호스트)</strong> 는
+<strong>"내 컴퓨터 자신"을 가리키는 주소</strong>다. 인터넷 어딘가가 아니라 지금 내 앞의 이 컴퓨터다.
+옆자리 사람이 같은 주소를 열면 내 시안이 아니라 그 사람 자신의 컴퓨터를 찾는다.
+<strong>포트(port)</strong> 는 <strong>한 컴퓨터 안에서 프로그램을 구분하는 번호</strong>다. 주소 뒤의 <code>:4173</code>이
+그것이다. 한 컴퓨터에서 여러 프로그램이 동시에 요청을 받을 수 있으므로, 번호로 "몇 번
+창구의 프로그램"인지 가린다.</p>
+<p>번호에 깊은 뜻은 없다. 시안 서버는 Claude Code가 띄우고, 번호도 그때 고른다. 뒤에서 온티켓의
+두 앱이 쓸 번호(3000과 8787)와 겹치지만 않으면 된다. 서버·localhost·포트는 두 앱의 뼈대를 세울 때
+더 자세히 풀어 설명한다. 지금은 "내 컴퓨터의 몇 번 창구에 시안이 떠 있다" 정도로 충분하다.</p>
+<h3>도구(tool)의 이름들</h3>
+<p><code>tools</code> 항목에 적는 도구들의 이름과 능력을 알아 두자. 이 조합이 곧 권한이다.
+먼저 Claude Code에 기본으로 들어 있는 도구들이다.</p>
+<table>
+<thead>
+<tr>
+<th>도구</th>
+<th>능력</th>
+<th>리뷰어에게 주나?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Read</td>
+<td>파일을 읽는다 (<strong>이미지·스크린샷도 읽는다</strong>)</td>
+<td>준다</td>
+</tr>
+<tr>
+<td>Grep, Glob</td>
+<td>파일 내용·이름을 검색한다</td>
+<td>준다</td>
+</tr>
+<tr>
+<td>Edit</td>
+<td>기존 파일을 고친다</td>
+<td><strong>안 준다</strong></td>
+</tr>
+<tr>
+<td>Write</td>
+<td>새 파일을 만든다·덮어쓴다</td>
+<td><strong>안 준다</strong></td>
+</tr>
+<tr>
+<td>Bash</td>
+<td>터미널 명령을 실행한다</td>
+<td><strong>안 준다</strong></td>
+</tr>
+</tbody>
+</table>
+<p>도구를 좀 더 풀어 두자. 처음 보는 사람에게는 이름만으로 능력이 안 그려진다.</p>
+<ul>
+<li><strong>Read</strong> — 파일 하나를 열어 내용을 본다. 텍스트 파일이면 글자를, 이미지 파일이면
+  그림을 읽는다. 판단 근거인 <code>tokens.css</code>·<code>금지목록.md</code>·<code>화면기획서.md</code>(글자)와
+  찍어 둔 스크린샷(그림)을 둘 다 이걸로 읽는다.</li>
+<li><strong>Grep</strong> — 여러 파일 속에서 <strong>특정 단어·패턴을 찾는다</strong>. "이 색 값이 코드
+  어디에 쓰였나"를 뒤질 때 쓴다. 이름은 유닉스의 오래된 검색 명령 <code>grep</code>에서
+  왔다. 읽기 계열이라 리뷰어에게 줘도 안전하다.</li>
+<li><strong>Glob</strong> — <strong>파일 이름 패턴으로 파일을 찾는다</strong>. <code>home-*.png</code>처럼 별표(와일드카드)를
+  써서 "폭별 스크린샷이 다 있나"를 확인하는 데 쓴다. 역시 읽기 계열이다.</li>
+<li><strong>Edit</strong> — <strong>기존 파일의 내용을 고친다.</strong> 손을 대는 도구다. 리뷰어에게는 절대
+  주지 않는다. 이게 없어야 "고칠 수 없는 검토자"가 된다.</li>
+<li><strong>Write</strong> — <strong>파일을 새로 만들거나 통째로 덮어쓴다.</strong> Edit보다 더 강한 손이다.
+  역시 리뷰어에게 주지 않는다.</li>
+<li><strong>Bash</strong> — <strong>터미널 명령을 실행한다.</strong> 파일 삭제·설치·서버 실행까지 할 수 있는
+  가장 강한 도구다. 명령 한 줄로 파일을 덮어쓸 수도 있으니, 이것을 주면 Edit·Write를
+  뺀 의미가 없어진다. 불필요한 힘은 애초에 주지 않는다.</li>
+</ul>
+<p>리뷰어가 그림을 '본다'는 것이 가능한 이유는 Claude가 <strong>멀티모달(multimodal)</strong> 모델이기
+때문이다. '모달(modal)'은 정보의 양식·형태를 뜻하는데, 글자만 다루면 단일 양식이고,
+글자와 그림을 함께 다루면 여러 양식 — 멀티모달이다. 스크린샷의 픽셀을 Claude가 직접
+보므로 "이 화면에서 가격이 잘렸다" 같은 판단을 코드 없이 이미지만으로 할 수 있다.</p>
+<p>다음은 Playwright MCP를 연결하면 생기는 브라우저 도구들이다. MCP로 들어온 도구는 이름이
+<strong><code>mcp__서버이름__도구이름</code></strong> 형식이다(밑줄 두 개씩). 우리는 서버를 <code>playwright</code>라는
+이름으로 등록할 것이므로 <code>mcp__playwright__browser_click</code> 같은 이름이 된다.</p>
+<table>
+<thead>
+<tr>
+<th>도구 이름(뒷부분)</th>
+<th>능력</th>
+<th>리뷰에서의 쓰임</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>browser_navigate</code></td>
+<td>주소를 연다</td>
+<td>시안 서버 주소(예: <code><a href="http://localhost:4173" target="_blank" rel="noopener noreferrer">http://localhost:4173</a></code>)를 연다</td>
+</tr>
+<tr>
+<td><code>browser_resize</code></td>
+<td>창 크기를 바꾼다</td>
+<td>1440·768·375 세 폭으로 바꾼다</td>
+</tr>
+<tr>
+<td><code>browser_take_screenshot</code></td>
+<td>스크린샷을 찍어 파일로 저장한다</td>
+<td>폭마다 증거를 남긴다</td>
+</tr>
+<tr>
+<td><code>browser_snapshot</code></td>
+<td>화면의 구조(어떤 버튼·입력칸이 있는지)를 읽는다</td>
+<td>누를 대상을 찾는다</td>
+</tr>
+<tr>
+<td><code>browser_click</code></td>
+<td>누른다</td>
+<td>카드·버튼을 눌러 흐름을 따라간다</td>
+</tr>
+<tr>
+<td><code>browser_type</code></td>
+<td>입력칸에 글자를 넣는다</td>
+<td>이메일을 넣어 예매하기 버튼이 활성으로 바뀌는지 본다</td>
+</tr>
+<tr>
+<td><code>browser_select_option</code></td>
+<td>목록(드롭다운)에서 항목을 고른다</td>
+<td>등급이나 수량을 고른다</td>
+</tr>
+</tbody>
+</table>
+<p>Playwright에는 이 밖에도 도구가 많다. 페이지 안에서 임의의 코드를 실행하는 도구도,
+파일을 업로드하는 도구도 있다. 리뷰에는 필요 없으므로 <strong>주지 않는다.</strong> 서버가 가진
+도구를 통째로 넘기지 않고 일곱 개만 골라 적는 이유다.</p>
+<p>여기서 관통하는 생각이 <strong>최소 권한 원칙(least privilege)</strong> 이다. 보안·시스템
+설계의 오랜 격언으로, "그 일에 꼭 필요한 권한만 주고 나머지는 주지 않는다"는
+뜻이다. 리뷰어는 파일을 읽고, 화면을 열고, 버튼을 누르고, 스크린샷을 찍을 수 있으면 검토할 수 있다. Edit·Write·Bash를
+"혹시 필요할까 봐" 얹어 두는 순간, 리뷰어는 '고칠 수 있는 리뷰어'가 되어 이
+장의 목적을 스스로 무너뜨린다. 권한은 넉넉히가 아니라 <strong>보는 데 필요한 만큼만</strong>이 정답이다.</p>
+<p>한 가지는 정직하게 짚어 둔다. 스크린샷 도구는 <code>.png</code> 파일을 <strong>만든다.</strong> "파일을 못
+만든다더니?" 싶겠지만, 이 도구가 하는 일은 정해진 폴더(<code>design/screenshots/</code>)에 그림
+파일을 떨어뜨리는 것뿐이다. 시안이나 토큰의 내용을 고치는 손이 아니다. 리뷰어가 지켜야
+할 원본은 <code>design/</code>의 HTML과 CSS이고, 그것을 건드릴 도구는 여전히 하나도 없다.</p>
+<h3>서브에이전트는 어떻게 부르나</h3>
+<p>"디자인 리뷰 해줘"라고만 하면 된다. Claude가 description을 보고 알아서 리뷰어에게 맡긴다.
+주소도 말하지 않는다 — 시안 서버를 띄운 메인 세션이 리뷰를 맡길 때 그 주소를 넘긴다.</p>
+<p>두 방식의 차이를 정리하면 이렇다. 명시 호출은 "김 대리, 이거 검토해"라고 사람을
+콕 집는 것이고, 자동 위임은 "이 서류 검토 좀"이라고만 해도 매니저가 알아서 담당자에게
+넘기는 것이다. 자동 위임이 걸리려면 <code>description</code>에 <strong>어떤 요청이 오면 이 에이전트가
+맡는지</strong>가 적혀 있어야 한다. <code>description</code>을 구체적으로 쓰면 짧은 요청으로도 적절한 에이전트에게
+위임할 수 있다. 다만 배우는 단계에서는 <strong>누가 무슨 권한으로 일하는지 확인하는 것</strong>도
+중요하다. 이름을 부르지 않았으니 그것은 다른 데서 확인한다 — 리뷰어가 일하는 동안 승인 창에
+찍히는 도구 이름이다. 브라우저 도구만 불리고 편집 도구는 한 번도 불리지 않는 것을 보며 "지금
+일하는 건 편집 권한 없는 리뷰어다"를 확인한다.</p>
+<h3>등급 (Severity)</h3>
+<p>지적에 무게를 매기는 표준적인 방법이다. 등급이 없으면 "고칠 게 12개"라는
+목록 앞에서 무엇부터 할지 알 수 없다.</p>
+<table>
+<thead>
+<tr>
+<th>등급</th>
+<th>뜻</th>
+<th>처리 규칙</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blocker</td>
+<td>이대로 내보낼 수 없다 (기능·신뢰 훼손)</td>
+<td>반드시 고친다</td>
+</tr>
+<tr>
+<td>Major</td>
+<td>품질을 뚜렷이 해친다</td>
+<td>웬만하면 고친다</td>
+</tr>
+<tr>
+<td>Minor</td>
+<td>다듬으면 좋다</td>
+<td>사람이 취사선택한다</td>
+</tr>
+</tbody>
+</table>
+<p>'등급(severity)'은 원래 '심각도'라는 뜻이다. 소프트웨어를 만드는 조직은 버그가
+발견되면 가장 먼저 이 심각도를 매긴다 — 서비스가 멈추는 버그와 오타 하나는
+같은 급으로 다룰 수 없기 때문이다. 회사마다 이름은 달라도(P0/P1/P2, S1/S2/S3,
+Critical/High/Low) 구조는 똑같다: <strong>얼마나 급한가로 줄을 세운다.</strong> 등급을 매기는
+행위 자체가 "무엇부터 손댈지"를 자동으로 정렬해 준다. 우리는 디자인 지적에도
+같은 삼단 구조를 쓴다.</p>
+<p>셋의 경계를 감각적으로 잡아 두면 리뷰어가 등급을 흔들리지 않게 매긴다.</p>
+<ul>
+<li><strong>Blocker</strong> — 그대로 고객에게 보이면 <strong>기능이나 신뢰가 깨지는</strong> 것. 가격이
+  잘려 안 보인다, 예매 버튼이 겹쳐 눌리지 않는다, 매진 등급이 골라진다, 예매 화면에서
+  되돌아갈 길이 없다. "이대로 오픈? 안 된다"가 나오면 Blocker다. 반드시 고친다.</li>
+<li><strong>Major</strong> — 기능은 되지만 <strong>품질이 눈에 띄게 나쁜</strong> 것. 카드 높이가 들쭉날쭉하다,
+  간격이 규칙을 벗어났다. 고객이 "완성도가 좀…" 하고 느낄 수준. 웬만하면 고친다.</li>
+<li><strong>Minor</strong> — 있으면 좋고 없어도 그만인 <strong>다듬기</strong>. 여백을 2px 더, 색을 아주
+  약간 더. 시간과 취향에 따라 사람이 고른다.</li>
+</ul>
+<p>경계가 애매한 지적은 리뷰어에게 <strong>근거로 판단하게</strong> 시킨다. "이 문제가 예매를
+막는가? → 막으면 Blocker"처럼, 등급의 기준을 '기능·신뢰에 주는 타격'으로
+못 박아 두면 리뷰어마다·요청마다 등급이 출렁이는 것을 막을 수 있다.</p>
+<h3>반응형과 화면 폭 — 1440·768·375는 무슨 숫자인가</h3>
+<p><strong>반응형(Responsive)</strong> 은 하나의 화면이 <strong>보는 기기의 폭에 맞춰 배치를 스스로
+바꾸는</strong> 설계 방식이다. PC의 넓은 화면에서는 카드를 가로로 네 개 늘어놓다가,
+휴대폰의 좁은 화면에서는 세로로 한 줄씩 쌓는 식이다. 같은 페이지가 기기에
+'반응(respond)'해 다른 모습이 된다고 해서 반응형이다. 종이 신문은 폭이 고정이지만,
+웹은 고객이 어떤 기기로 볼지 모르므로 폭에 반응하도록 만든다.</p>
+<p>숫자 1440·768·375는 <strong>화면의 가로 폭을 픽셀(px)로 나타낸 값</strong>이다. 픽셀은
+화면을 이루는 점 하나의 단위로, 폭이 375px라면 "가로로 점 375개만큼 넓은 화면"을
+뜻한다. 이 세 숫자는 아무렇게나 고른 게 아니라 <strong>가장 흔한 세 종류의 기기</strong>를
+대표한다.</p>
+<table>
+<thead>
+<tr>
+<th>폭</th>
+<th>대표 기기</th>
+<th>왜 이 폭을 보나</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1440px</td>
+<td>노트북·데스크톱</td>
+<td>카드가 가장 넓게 펼쳐지는 배치. 여백·정렬이 잘 보인다</td>
+</tr>
+<tr>
+<td>768px</td>
+<td>태블릿(가로 세로 중간)</td>
+<td>배치가 바뀌는 <strong>전환 구간</strong>. 여기서 레이아웃이 자주 깨진다</td>
+</tr>
+<tr>
+<td>375px</td>
+<td>휴대폰(대표적인 좁은 폭)</td>
+<td>온티켓 고객 대다수. 잘림·겹침이 가장 잘 터진다</td>
+</tr>
+</tbody>
+</table>
+<p>폭이 바뀔 때 배치를 갈아타는 <strong>경계 지점</strong>을 <strong>브레이크포인트(breakpoint)</strong> 라
+한다. "폭이 768px보다 좁아지면 카드를 한 줄로 바꿔라" 같은 규칙에서 768이
+브레이크포인트다. 세 폭을 고른 이유가 여기서 분명해진다 — 넓은 쪽 하나(1440),
+좁은 쪽 하나(375), 그리고 <strong>둘이 갈리는 전환 구간(768)</strong>. 사고는 대개 이 전환
+구간과 가장 좁은 폭에서 터지므로, 세 폭이면 화면이 깨지는 대부분을 잡아낸다.
+하나만 보고 통과시키면 나머지 폭의 사고를 통째로 놓친다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> "왜 하필 이 세 숫자냐"가 궁금해지기 쉬운데, 정답이 정해진
+값은 아니고 널리 쓰이는 대표값이다. 중요한 건 숫자 자체가 아니라
+<strong>넓게·전환·좁게 세 지점을 본다</strong>는 원리다. 운영 중인 서비스라면 실제 접속
+통계에서 가장 많은 폭을 넣는 게 맞다.</p>
+</blockquote>
+<hr />
+<h2>6.3 세팅 — Node.js와 Playwright MCP</h2>
+<p>리뷰어에게 브라우저를 쥐여 주려면 두 가지를 깐다. 바닥인 <strong>Node.js</strong>, 그 위에서 도는
+<strong>Playwright MCP</strong>. 순서가 중요하고, 중간에 Claude Code를 한 번 껐다 켜야 한다.</p>
+<h3>Node.js 설치</h3>
+<ol>
+<li><a href="https://nodejs.org" target="_blank" rel="noopener noreferrer">https://nodejs.org</a> 접속 → <strong>LTS</strong> 버전 다운로드</li>
+<li>설치 파일 실행, 기본 옵션 그대로 다음-다음</li>
+<li><strong>터미널을 새로 열고</strong> 확인:</li>
+</ol>
+<div class="termbox"><div class="prompt-bar"><span class="prompt-lab">터미널</span><button class="copy" type="button" data-copy="node --version    # v22.x.x 같은 버전이 나오면 성공&#10;npx --version">복사</button></div><pre class="term"><code><span class="ps">$ </span>node --version    # v22.x.x 같은 버전이 나오면 성공
+<span class="ps">$ </span>npx --version
+</code></pre></div>
+<p><strong>LTS</strong>는 'Long Term Support(장기 지원)'의 약자다. Node는 최신 실험 버전(Current)과
+안정 버전(LTS)을 나눠 배포하는데, LTS는 오랫동안 고쳐 주고 안정성이 검증된 판이다.
+배우는 단계에서는 최신 기능보다 안정성이 중요하니 항상 LTS를 고른다.</p>
+<p>3번의 <strong>"터미널을 새로 열고"</strong> 를 빠뜨리지 말자. Claude Code를 설치할 때 배운 원리가
+그대로 적용된다 — 터미널은 열릴 때 사용 가능한 명령 목록을 읽어 들이므로, 지금 열려
+있는 터미널은 방금 생긴 <code>node</code>·<code>npx</code> 명령을 아직 모른다. 두 명령이 각각 버전 숫자를
+대답하면 성공이다. npx는 따로 깔지 않았는데도 버전이 나온다 — Node를 깔면 함께 딸려
+오기 때문이다.</p>
+<h3>Playwright MCP 추가</h3>
+<blockquote class="stop">
+<p><strong>[잠깐] MCP 서버는 Claude Code가 시작될 때 연결된다.</strong> 켜져 있는 세션에는 새로 추가한
+MCP가 나타나지 않는다. 그래서 순서는 반드시 이렇다 — <strong>Claude Code를 끈다 → 터미널에서
+추가한다 → Claude Code를 다시 켠다.</strong> 이 재시작을 건너뛰면 뒤의 리뷰 실습에서 리뷰어가
+브라우저 도구를 찾지 못한다.</p>
+</blockquote>
+<p>Claude Code 세션 안에서 <code>/exit</code>를 입력해 끈다. 그다음 <strong>온티켓 프로젝트 폴더의 터미널</strong>에서
+다음을 실행한다.</p>
+<div class="termbox"><div class="prompt-bar"><span class="prompt-lab">터미널</span><button class="copy" type="button" data-copy="claude mcp add --scope project playwright -- npx -y @playwright/mcp@latest --output-dir design/screenshots">복사</button></div><pre class="term"><code><span class="ps">$ </span>claude mcp add --scope project playwright -- npx -y @playwright/mcp@latest --output-dir design/screenshots
+</code></pre></div>
+<p>한 줄이 길지만 부분마다 뜻이 있다.</p>
+<table>
+<thead>
+<tr>
+<th>부분</th>
+<th>뜻</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>claude mcp add</code></td>
+<td>Claude Code에 MCP 서버를 하나 등록한다</td>
+</tr>
+<tr>
+<td><code>--scope project</code></td>
+<td>등록 내용을 <strong>이 프로젝트의 <code>.mcp.json</code> 파일</strong>에 적는다</td>
+</tr>
+<tr>
+<td><code>playwright</code></td>
+<td>이 서버에 붙이는 이름. 도구 이름 <code>mcp__playwright__…</code>의 가운데 부분이 된다</td>
+</tr>
+<tr>
+<td><code>--</code></td>
+<td>구분선. 여기까지가 Claude Code에게 주는 옵션이고, <strong>이 뒤는 서버를 실행하는 명령 그 자체</strong>다</td>
+</tr>
+<tr>
+<td><code>npx -y @playwright/mcp@latest</code></td>
+<td>Playwright MCP 패키지의 최신판을 받아 바로 실행한다. <code>-y</code>는 "받아도 되느냐"는 물음에 미리 '예'라고 답해 둔다</td>
+</tr>
+<tr>
+<td><code>--output-dir design/screenshots</code></td>
+<td>스크린샷이 저장될 폴더. 지정하지 않으면 작업 폴더에 그대로 쌓인다</td>
+</tr>
+</tbody>
+</table>
+<p><code>--scope project</code>는 눈여겨볼 선택이다. 기본값(<code>local</code>)으로 두면 등록 내용이 내 컴퓨터의
+개인 설정 파일(<code>~/.claude.json</code>)에만 남는다. <code>project</code>로 하면 프로젝트 폴더에 <code>.mcp.json</code>
+이라는 파일이 생기고, 이 파일은 <code>.claude/skills/</code>·<code>.claude/agents/</code>의 역할 정의들처럼
+<strong>프로젝트와 함께 움직인다.</strong> 나중에 이 프로젝트를 받은 동료는 같은 MCP를 그대로 쓰게
+된다(처음 열 때 Claude Code가 승인 여부를 묻는다). 팀의 정의가 한 사람의 컴퓨터가 아니라
+프로젝트 폴더에 담겨 옮겨 다닌다는, 이 과정 내내 지키는 원칙 그대로다.</p>
+<p>등록을 확인하고 Claude Code를 다시 켠다.</p>
+<div class="termbox"><div class="prompt-bar"><span class="prompt-lab">터미널</span><button class="copy" type="button" data-copy="claude mcp list&#10;claude">복사</button></div><pre class="term"><code><span class="ps">$ </span>claude mcp list
+<span class="ps">$ </span>claude
+</code></pre></div>
+<p><code>claude mcp list</code>의 목록에 <code>playwright</code>가 보이면 등록된 것이다. 세션이 열리면 <code>/mcp</code>를
+입력해 playwright가 <strong>연결됨(connected)</strong> 으로 나오는지 확인한다.</p>
+<p>프로젝트 폴더에 <code>.mcp.json</code> 파일이 새로 생겼는지도 확인한다. 한번 열어 보라 — 방금 친 명령의
+뒷부분(<code>npx</code>, <code>@playwright/mcp@latest</code>, <code>--output-dir</code>)이 그대로 적혀 있다. <strong>명령이 한 일은
+이 파일에 몇 줄을 적은 것뿐</strong>이다.</p>
+<p>처음 실행할 때는 npx가 패키지를 내려받고, Playwright가 자기가 조종할 브라우저를
+내려받느라 시간이 걸릴 수 있다. 브라우저가 없다는 오류가 나오면 당황하지 말고 그 오류
+문구를 그대로 Claude Code에 붙여 넣는다 — 설치 방법을 안내받을 수 있다.</p>
+<h3>시안은 작은 웹서버로 띄워 연다</h3>
+<p>리뷰어는 시안을 <code>design/</code> 폴더를 띄운 <strong>작은 웹서버</strong>의 <code><a href="http://localhost" target="_blank" rel="noopener noreferrer">http://localhost</a>:…</code> 주소로 연다.
+서버(server)는 요청을 받으면 파일을 내주는 프로그램이다.</p>
+<p>서버는 사람이 띄우지 않는다. "시안 서버 띄워서 주소 알려줘" 한 줄이면 Claude Code가 띄우고 주소를 알려 준다.
+뒤에서 진짜 화면이 만들어지면 그것도 <code><a href="http://localhost" target="_blank" rel="noopener noreferrer">http://localhost</a>:…</code> 주소로 뜬다. 그때 같은 리뷰어를 주소만 바꿔 부르면 된다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> MCP 도구도 다른 도구와 똑같이, 처음 쓸 때마다 Claude Code가 승인 창을
+띄운다. 리뷰어가 화면을 여러 번 열고 누르므로 창이 자주 뜬다. 처음에는 뜨는 창을
+읽고 승인하게 두는 것이 좋다 — "지금 어떤 도구가 무엇을 하려는가"가 그대로 보이기
+때문이다. 번거로워지면 <code>.claude/settings.json</code>의 <code>permissions.allow</code>에 도구 이름을
+넣어 미리 허용해 둘 수 있다(선택 사항).</p>
+</blockquote>
+<hr />
+<h2>6.4 디자인 리뷰어 설계 — 네 항목과 정의 파일</h2>
+<p>역할 정의의 원리에서 익힌 '네 항목'을 리뷰어에 대입해 펼치면 이렇다. 이 네 항목이 채워지면
+역할이 완성된다.</p>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>리뷰어의 경우</th>
+<th>왜 이렇게</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>판단 기준</td>
+<td><code>design/tokens.css</code>·<code>design/금지목록.md</code>(어떻게 보여야 하는가) + <code>docs/화면기획서.md</code>(무엇이 있어야 하고 어떻게 이어져야 하는가)</td>
+<td>취향이 아니라 우리가 정한 규칙으로 판단해야 결과가 흔들리지 않는다</td>
+</tr>
+<tr>
+<td>프로세스</td>
+<td>주소를 연다 → 세 폭으로 찍는다 → 흐름대로 눌러 본다 → 상태를 확인한다 → 등급 리포트</td>
+<td>빠짐 없이 보고, 지적이 검증·처리 가능한 형태가 되게 한다</td>
+</tr>
+<tr>
+<td>금지</td>
+<td>파일 수정 일체(제안 코드 포함), 근거 없는 지적, 취향 지적</td>
+<td>'검토하는 사람'의 독립성을 지킨다. 손대는 순간 만든 사람이 된다</td>
+</tr>
+<tr>
+<td>도구 권한</td>
+<td>Read·Grep·Glob + Playwright 도구 일곱 개. <strong>Edit·Write·Bash 없음</strong></td>
+<td>금지를 부탁이 아니라 <strong>구조</strong>로 강제한다</td>
+</tr>
+</tbody>
+</table>
+<p>눈여겨볼 것은 <strong>금지 항목과 도구 권한 항목이 같은 목표를 이중으로 지킨다</strong>는 점이다.
+금지 항목은 지침(말)으로 "고치지 마라"라고 하고, 도구 권한 항목은 구조(손)로
+"고칠 수 없게" 만든다. 지침만 있으면 부탁이고, 구조까지 있어야 보장이다.
+그래서 리뷰어를 만든 뒤에는 <code>tools:</code> 줄을 직접 열어, 이 이중 잠금의 구조 쪽이 실제로 걸렸는지 눈으로 확인한다.</p>
+<p>프로세스 항목의 '상태를 확인한다'는 화면기획서에 적힌 약속을 하나씩 눌러 보는 일이다.</p>
+<ul>
+<li>매진 등급을 눌렀을 때 <strong>골라지지 않는가</strong></li>
+<li>등급·수량·이메일 중 하나라도 비어 있을 때 예매하기가 <strong>화면기획서에 적은 대로</strong> 동작하는가
+  (버튼이 비활성이 되든, 누르면 안내가 뜨든 기획서가 정한 방식이어야 한다)</li>
+<li>화면마다 <strong>되돌아가는 길</strong>이 있는가</li>
+<li>마이티켓에 맞지 않는 값을 넣으면 안내문이 나오고 <strong>같은 화면에 머무는가</strong></li>
+</ul>
+<p>이를 파일로 옮긴 전문이다. (실습에서 Claude Code에게 만들게 시킨다.)</p>
+<pre><code class="language-markdown">---
+name: design-reviewer
+description: 온티켓 화면·시안을 브라우저로 직접 열어 검토할 때 사용한다.
+  디자인 리뷰, 시안 검토, 프로토타입 흐름 확인, 화면 QA 요청이 오면 이 에이전트에 위임한다.
+tools: Read, Grep, Glob, mcp__playwright__browser_navigate, mcp__playwright__browser_resize, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_select_option, mcp__playwright__browser_snapshot
+---
+
+너는 (주)승승장구 온티켓의 디자인 리뷰어다. 너의 산출물은 수정이 아니라
+증거 스크린샷이 붙은, 등급이 매겨진 지적이다.
+
+## 판단 기준
+- 어떻게 보여야 하는가: design/tokens.css 와 design/금지목록.md
+- 무엇이 있어야 하고 어떻게 이어져야 하는가: docs/화면기획서.md 의
+  화면 목록, 화면별 요소와 상태, 화면 흐름
+- 취향이 아니라 근거로 말한다. 모든 지적에는 &quot;무엇이(위치) — 왜(근거)&quot;를 붙인다
+
+## 프로세스
+1. 리뷰를 맡길 때 받은 주소를 연다. 받은 주소가 없거나 열리지 않으면 리뷰를 시작하지 말고,
+   시안 서버가 떠 있는지 확인해 달라고 요청하라
+2. 화면마다 창 폭을 1440·768·375 로 바꿔 가며 전체 화면 스크린샷을 저장한다.
+   스크린샷 이름은 home-1440.png 처럼 화면-폭으로 붙인다. 세 폭 중 하나라도 빠뜨리지 않는다
+3. docs/화면기획서.md 의 화면 흐름대로 눌러 본다. 누를 대상은 화면 구조를 읽어 찾는다.
+   되돌아가는 길도 하나씩 눌러 본다
+4. 화면기획서에 적힌 상태를 확인한다 (매진 등급이 골라지지 않는가, 등급·수량·이메일이
+   비었을 때 예매하기가 기획서대로 동작하는가, 되돌아가는 길이 있는가).
+   문제가 보이는 상태는 그 순간을 스크린샷으로 남긴다
+5. 리포트를 쓴다
+
+## 리포트 형식
+| 등급 | 위치(화면·폭) | 문제 | 근거(토큰/금지목록 조항/화면기획서 항목/가독성) | 증거 스크린샷 |
+마지막 줄에 종합 판정: 통과 / 조건부 통과(Blocker 0, Major 있음) / 반려(Blocker 있음)
+
+## 금지
+- 파일을 고치지 않는다. 고침을 제안하는 코드도 쓰지 않는다 —
+  결정은 디자이너와 사람의 몫이다
+- 근거 없는 지적(&quot;느낌이 아쉽다&quot;)을 하지 않는다
+- 토큰·금지목록·화면기획서에 없는 취향(&quot;나라면 파란색&quot;)을 지적하지 않는다
+- 받은 주소 밖의 사이트로 나가지 않는다
+</code></pre>
+<p>이 파일을 한 줄씩 다시 읽어 보면 설계 의도가 드러난다.</p>
+<ul>
+<li>머리말 <code>tools:</code> — 이 한 줄이 리뷰어의 <strong>정체성</strong>이다. 앞의 셋은 읽기·검색, 뒤의
+  일곱은 브라우저다. Edit·Write·Bash가 없으니 물리적으로 고칠 수 없다. 나머지 본문이
+  아무리 느슨해도 이 한 줄이 '검토하는 사람'의 독립성을 보장한다. 그리고 이 줄을 생략하면
+  전부 상속한다는 함정을 다시 떠올리자 — <strong>줄이 있는 것 자체가 안전장치다.</strong></li>
+<li>"산출물은 수정이 아니라 … 지적이다" — 리뷰어가 자기 일의 결과가 <strong>무엇이어야
+  하는지</strong>를 못 박는다. 코드가 아니라 리포트가 산출물이다.</li>
+<li>"열리지 않으면 리뷰를 시작하지 말고 요청하라" — 화면을 못 봤는데 코드만 읽고 통과
+  판정을 내리는 사고를 막는다. <strong>불완전한 재료로는 판정하지 않는다</strong>는 규율이다.</li>
+<li>"무엇이(위치) — 왜(근거)" 그리고 <strong>증거 스크린샷</strong> — 지적이 <strong>검증 가능하고 반영
+  가능한</strong> 형태가 되게 강제한다. "예매 화면 375px — 가격이 카드 폭보다 길어 잘림,
+  <code>booking-375.png</code>"처럼 적혀야 사람이 그 파일을 열어 사실인지 확인하고, 디자이너가
+  어디를 고칠지 안다.</li>
+<li>"고침을 제안하는 코드도 쓰지 않는다" — 이게 은근히 중요하다. 편집 도구가
+  없어도 리뷰어가 "이렇게 고치세요" 하며 코드를 써 주면, 사람이 그걸 무비판적으로
+  붙여넣게 된다. 그러면 사실상 리뷰어가 설계까지 해 버린 셈이다. 판정은 리뷰어,
+  수정은 디자이너 — 경계를 흐리지 않는다.</li>
+</ul>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 직접 만든 파일에서 가장 자주 틀어지는 곳이 두 군데다.
+(1) <code>tools:</code>에 습관적으로 Edit이나 Write가 끼어드는 것, (2) 리포트에 종합
+판정 줄이 빠지는 것. 생성 직후 이 두 줄을 함께 확인하는 습관을 들이면
+뒤에서 사고가 안 난다. <code>tools:</code> 줄은 특히 한 자 한 자 눈으로 짚어 두면 좋다.</p>
+</blockquote>
+<h3>'검토하는 사람 분리'는 개발 어디에나 쓴다</h3>
+<p>디자인만의 이야기가 아니다. 읽기 전용 검토자는 개발 과정의 여러 곳에 둘 수 있다.</p>
+<ul>
+<li><strong>코드 리뷰어</strong> — 버그·명세 위반·읽기 어려운 구조를 등급으로 지적만.
+  편집 권한이 없으니 "지적하면서 몰래 고쳐 버리는" 일이 없다</li>
+<li><strong>명세 대조 검토자</strong> — 구현된 API가 명세의 요청·응답·오류 코드와 다른 곳만 표시.
+  코드도 명세도 한 글자 못 건드린다</li>
+<li><strong>접근성 리뷰어</strong> — 실제 화면의 스크린샷을 보고 대비·포커스 순서·키보드 조작을 지적</li>
+<li><strong>마이그레이션 검토자</strong> — 변경 SQL이 ERD와 맞는지, 되돌리기 SQL이 짝으로 있는지 대조해 불일치만 보고</li>
+</ul>
+<p>공통 패턴이 보일 것이다 — <strong>원본을 지킬 필요가 있는 모든 검토</strong>에는
+'보는 권한만 + 등급 리포트' 조합이 통한다.</p>
+<p>각각을 조금 더 구체적으로 그려 보면, 이 패턴이 왜 강력한지 실감이 난다.</p>
+<ul>
+<li><strong>코드 리뷰어</strong> — <code>tools: Read, Grep, Glob</code>만 준다. 명세 위반·빠진 오류 처리·
+  이름 불일치(같은 대상을 <code>order</code>와 <code>booking</code>으로 섞어 쓰는 것 등)를
+  Blocker/Major/Minor로 매겨 리포트한다. 코드를 고칠 손이 없으니, 검토자가
+  개발자의 코드를 몰래 자기 취향으로 바꿔 놓는 사고가 원천 봉쇄된다. 반영은 개발자가 한다.</li>
+<li><strong>명세 대조 검토자</strong> — 명세에는 409로 적힌 응답이 구현에서는 400으로 나가는
+  것 같은 불일치를 등급으로 표시한다. 명세는 <strong>한 줄 바뀌는 것 자체가 프론트·백엔드
+  양쪽에 영향</strong>을 주는 문서라, 검토자에게 편집 권한을 주는 것은 상상할 수 없다.
+  읽기 전용이 안전장치이자 요건이다.</li>
+<li><strong>마이그레이션 검토자</strong> — 변경 SQL에 적힌 컬럼 타입이 ERD와 맞는지, 되돌리기
+  SQL이 실제로 원래 상태로 복구하는지 대조한다. Read로 두 파일을 읽고 불일치만
+  보고한다. SQL을 '보정'하지 않고 <strong>틀린 곳만 짚는다</strong> — 고치는 건 DBA의 판단
+  영역이기 때문이다.</li>
+</ul>
+<p>이 사례들의 공통 구조는 세 가지다. (1) 지켜야 할 <strong>원본</strong>이 있고, (2) 검토자에게
+<strong>보는 데 필요한 권한만</strong> 주며, (3) 결과는 <strong>등급이 붙은 리포트</strong>로 받는다. 온티켓의
+디자인 리뷰어는 이 범용 패턴의 한 사례일 뿐이다. 이 장을 마치면, 여러분은
+개발 과정 어디에든 '고칠 수 없는 검토자'를 찍어 낼 템플릿을 손에 쥐게 된다.</p>
+<hr />
+<h2>6.5 프롬프트 작성법 — 만들게 하고, 리뷰를 시키고, 반영한다</h2>
+<h3>전 화면 시안과 프로토타입 — 프롬프트는 짧아도 된다</h3>
+<p>홈 시안 하나로 토큰과 금지 목록, 디자이너 스킬이 제대로 도는 것은 이미 확인했다. 이제
+나머지 화면을 한꺼번에 만들고 서로 잇는다. 프롬프트는 이것이 전부다.</p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="/designer @docs/화면기획서.md대로 모든 화면을 눌러 볼 수 있는 클릭 프로토타입으로 만들어줘.&#10;- 프레임워크 없이 HTML/CSS로 빠르게. 화면마다 파일 하나씩 design/ 아래에 두고, 화면 흐름대로 버튼과 링크로 연결해. 홈(design/home.html)은 이미 있으니 이어서 써.&#10;- 데이터는 data/ CSV의 실제 행으로 채우고 서버나 DB는 연결하지 마. 매진·입력 오류 같은 상태 화면도 눌러 볼 수 있게 해.&#10;다 되면 어느 파일을 열면 되는지 알려줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">/designer @docs/화면기획서.md대로 모든 화면을 눌러 볼 수 있는 클릭 프로토타입으로 만들어줘.</span><span class="pl" style="padding-left:2ch;text-indent:-2ch">- 프레임워크 없이 HTML/CSS로 빠르게. 화면마다 파일 하나씩 design/ 아래에 두고, 화면 흐름대로 버튼과 링크로 연결해. 홈(design/home.html)은 이미 있으니 이어서 써.</span><span class="pl" style="padding-left:2ch;text-indent:-2ch">- 데이터는 data/ CSV의 실제 행으로 채우고 서버나 DB는 연결하지 마. 매진·입력 오류 같은 상태 화면도 눌러 볼 수 있게 해.</span><span class="pl" style="padding-left:0ch">다 되면 어느 파일을 열면 되는지 알려줘.</span></code></pre></div>
+<p>열 화면을 만들고 잇는 큰일인데 네 줄이다. <strong>짧아도 되는 이유는, 필요한 결정이 이미
+다른 곳에 적혀 있기 때문이다.</strong></p>
+<table>
+<thead>
+<tr>
+<th>알아야 할 것</th>
+<th>어디에 이미 있나</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>어떤 화면이 있고, 화면마다 무엇을 보여 주고 입력받는가</td>
+<td><code>docs/화면기획서.md</code>의 화면 목록</td>
+</tr>
+<tr>
+<td>매진 등급은 고를 수 없다, 빈칸이 있을 때 예매하기가 어떻게 동작하는가</td>
+<td><code>docs/화면기획서.md</code>의 화면별 요소와 상태</td>
+</tr>
+<tr>
+<td>어느 버튼이 어느 화면으로 가고, 어디로 되돌아가는가</td>
+<td><code>docs/화면기획서.md</code>의 화면 흐름</td>
+</tr>
+<tr>
+<td>어떤 색·글꼴·간격을 쓰고 무엇을 하면 안 되는가</td>
+<td><code>/designer</code> 스킬이 기준 자료로 삼는 <code>design/tokens.css</code>·<code>design/금지목록.md</code></td>
+</tr>
+<tr>
+<td>기획서에 없는 요소를 몰래 넣지 않는다 (필요하면 기획서 수정을 먼저 제안한다)</td>
+<td><code>/designer</code> 스킬의 프로세스</td>
+</tr>
+</tbody>
+</table>
+<p>프롬프트에 남긴 것은 <strong>어느 문서에도 없는 것</strong>뿐이다 — 프레임워크 없이 HTML/CSS로 빠르게 만든다는 것,
+파일을 화면마다 하나씩 둔다는 것, 홈은 이미 만들었다는 사실, 지금은 껍데기만 만든다는 것(CSV 표본값, 서버·DB 연결 없음), 상태 화면도 눌러 본다는 것.
+결제 화면의 자리는 적지 않았다. 화면기획서를 확정할 때 흐름에 이미 들어갔다. "프레임워크 없이"가 없으면
+AI는 열 화면을 잇는 일을 보고 React 같은 프레임워크로 프로젝트부터 세우기 쉽다. 설치와 설정에 시간이 들고,
+눌러 보는 데 쓸 시간이 줄어든다. 다만 반응형과 스타일은 빼라고 하지 않았다. 이 장의 리뷰어가 화면 폭을
+바꿔 가며 레이아웃과 토큰을 검사하기 때문이다. 앞에서 화면기획서를 쓰고 역할을
+정의하는 데 공을 들인 효과가 여기서 드러난다. <strong>문서와 역할 정의에 결정 사항이 기록되어 있으면, 사람은
+그것을 매번 다시 말하지 않아도 된다.</strong> 거꾸로, 프롬프트에 조건을 열 줄씩 적고 있다면
+그 조건이 있어야 할 문서가 비어 있다는 신호다. 그럴 때는 프롬프트를 늘리지 말고 문서를
+채운다.</p>
+<p>결과가 기대와 다르면 그때 고친다. 처음부터 모든 경우를 내다보고 적으려 하지 않는다 —
+눌러 보고, 어긋난 곳만 집어서 지시하는 편이 빠르고 정확하다.</p>
+<h3>리뷰 요청 — "디자인 리뷰 해줘"면 된다</h3>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="디자인 리뷰 해줘">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">디자인 리뷰 해줘</span></code></pre></div>
+<p>이게 전부다. 어디를 열지, 몇 폭으로 찍을지, 무엇을 눌러 볼지, 무슨 기준으로 판정할지,
+어떤 형식으로 보고할지를 <strong>하나도 말하지 않았는데</strong> 리뷰가 제대로 돈다. 그 결정들이 전부
+리뷰어의 정의 파일에 적혀 있기 때문이다.</p>
+<table>
+<thead>
+<tr>
+<th>리뷰에 필요한 결정</th>
+<th>정의 파일의 어디에 있나</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>누가 이 일을 맡는가</td>
+<td><code>description</code> — "디자인 리뷰 요청이 오면 이 에이전트에 위임한다". 그래서 이름을 부르지 않아도 Claude가 리뷰어에게 넘긴다</td>
+</tr>
+<tr>
+<td>어디를 여는가</td>
+<td>프로세스 — 리뷰를 맡길 때 받은 주소</td>
+</tr>
+<tr>
+<td>몇 폭으로, 어떤 이름으로 찍는가</td>
+<td>프로세스 — 리뷰어가 정한 폭과 이름(예: 1440·768·375, <code>home-1440.png</code>처럼 화면-폭)</td>
+</tr>
+<tr>
+<td>무엇을 눌러 보는가</td>
+<td>프로세스 — <code>docs/화면기획서.md</code>의 화면 흐름과 상태</td>
+</tr>
+<tr>
+<td>무슨 기준으로 판정하는가</td>
+<td>판단 기준 — 토큰, 금지 목록, 화면기획서</td>
+</tr>
+<tr>
+<td>어떤 형식으로 보고하는가</td>
+<td>리포트 형식 — 등급·위치·근거·증거 스크린샷 + 종합 판정</td>
+</tr>
+</tbody>
+</table>
+<p><strong>역할을 제대로 정의해 두면 부르는 말은 짧아진다.</strong> 앞에서 시안 프롬프트가 세 줄로 줄었던
+것과 같은 원리다. 거꾸로 "세 폭으로 찍고, 흐름대로 눌러 보고, 등급을 매겨서…"를 부를
+때마다 말하고 있다면, 그것은 리뷰어의 정의가 비어 있다는 신호다. 그럴 때는 프롬프트를
+늘리지 말고 <strong>정의 파일을 고친다.</strong> 한 번 고치면 다음부터는 누가 불러도 같은 방식으로 돈다.</p>
+<p>평소와 다르게 시키고 싶을 때만 말을 보탠다 — "예매 화면만 디자인 리뷰 해줘", "375 폭만
+다시 봐줘"처럼. 말하지 않은 나머지는 정의 파일이 채운다.</p>
+<p>정의 파일에서 가장 중요한 항목은 판단 기준이다. 핵심은 <strong>판정 기준을 사람의 취향이 아니라
+파일에 묶는 것</strong>이다. 기준 없이 "예쁜지 봐줘"라고만 하면 리뷰어가 자기 취향으로 판정해
+근거 없는 지적이 나온다. 기준 파일은 둘로 나뉜다. 토큰과
+금지목록은 "<strong>어떻게 보여야 하는가</strong>"의 기준이고, <code>docs/화면기획서.md</code>는 "<strong>무엇이 있어야
+하고 어떻게 이어져야 하는가</strong>"의 기준이다. 기획서에 "매진이면 고를 수 없다"고 적혀 있는데
+눌러 보니 골라진다면, 색과 간격이 아무리 말끔해도 그 화면은 덜 만들어진 것이다.</p>
+<p>정의 파일에 적어 둔 스크린샷 <strong>파일명 규칙</strong>도 같은 이유로 중요하다. <code>home-1440.png</code>처럼 이름만 보고 어느 화면의
+어느 폭인지 알 수 있어야, 리포트의 '증거 스크린샷' 항목을 보고 사람이 곧바로 그 그림을
+열어 확인할 수 있다. 이름이 <code>screenshot1.png</code>처럼 제각각이면 증거가 증거 노릇을 못 한다.</p>
+<h3>리뷰 결과를 받는 법 — 등급별 처리</h3>
+<p>리포트가 오면 기계적으로 전부 반영하지 않는다. 처리 규칙은 등급으로 정한다 —
+Blocker는 반드시, Major는 웬만하면, <strong>Minor는 사람이 고른다.</strong> 리뷰어의 지적은
+정보이지 명령이 아니다. 최종 결정은 언제나 사람 몫이다.</p>
+<p>이 "정보이지 명령이 아니다"가 특히 중요하다. 리뷰어가 12개를 지적했다고
+12개를 다 반영하면, 리뷰어가 사실상 디자인을 결정한 셈이 된다. 등급은 그
+지적들을 <strong>줄 세워</strong> 사람이 판단할 여지를 만든다. Minor 5개는 지금 시간이
+없으면 다음으로 미룰 수 있고, 취향에 안 맞으면 안 고쳐도 된다. 반대로 Blocker는
+취향 문제가 아니라 <strong>기능·신뢰의 문제</strong>라 미룰 수 없다. 등급이 곧 "무엇이
+협상 가능하고 무엇이 불가능한가"의 지도다.</p>
+<p>한 가지 더 — 리뷰어의 판정에 사람이 <strong>반론할 수 있다.</strong> "이건 Blocker가 아니라
+Minor다"라고 판단되면, 그렇게 재분류하면 된다. 다만 그럴 때도 근거로 다툰다.
+이를테면 리포트가 카드 높이가 제각각인 것을 Major로 잡았는데, 공연마다 정보량이 달라
+높이가 다른 것이 우리 화면에서는 의도한 것일 수 있다. 그러면 "마음에 안 들어"가 아니라
+그 이유를 댄다. 그 말을 어떻게 전하는지는 바로 아래에서 본다 — 받아들이지 않을 지적을
+이유와 함께 빼 달라고 하면 된다.</p>
+<h3>반영은 리뷰어가 아니라 디자이너에게</h3>
+<p>지적을 반영할 때 흔한 실수 — 리뷰어에게 "그럼 고쳐줘"라고 하는 것.
+우리 리뷰어는 고칠 수 없다(도구가 없다). 반영은 만드는 역할의 일이다. 그리고 그것을
+시키는 말은 이것으로 충분하다.</p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="방금 받은 디자인 리뷰에서 반영하기로 한 항목을 /designer로 수정해줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">방금 받은 디자인 리뷰에서 반영하기로 한 항목을 /designer로 수정해줘.</span></code></pre></div>
+<p><strong>무엇을</strong> 고칠지는 방금 받은 리뷰 리포트에 등급·위치·근거와 함께 적혀 있고,
+<strong>누가</strong> 고칠지는 <code>/designer</code>로 지정했다. 화면을 만들고 고치는 일은 디자이너의 몫이고,
+리뷰어에게는 편집 도구가 없다.
+앞에서 "디자인 리뷰 해줘" 한마디로 리뷰가 돌았던 것과 같은 원리다.</p>
+<p>평소와 다르게 시키고 싶을 때만 말을 보탠다. 리뷰는 정보이지 명령이 아니므로, 받아들이지
+않을 지적이 있으면 그것을 말한다 — "Minor는 제외하고 /designer로 고쳐줘", "헤더 간격은
+의도한 거니까 그 지적은 제외하고 /designer로 고쳐줘"처럼.</p>
+<p>여기서 역할의 왕복 구조가 완성된다. <strong>리뷰어(본다) → 사람(고른다) → 디자이너(고친다).</strong>
+셋이 서로 다른 자리에 앉아 있고, 각자 자기 권한만큼만 한다. 리뷰어는 지적하되
+못 고치고, 디자이너는 고치되 자기 결과를 스스로 통과시키지 못하며, 사람은 무엇을
+반영할지 결정한다. 이 삼각형이 품질이 만들어지는 최소 단위다.</p>
+<hr />
+<h2>6.6 실습 — 프로토타입, 첫 서브에이전트, 첫 리뷰 왕복</h2>
+<blockquote class="stop">
+<p><strong>[잠깐] 위 '세팅'을 먼저 마친다.</strong> Node.js가 깔려 있고, Playwright MCP가 추가되어 있으며,
+Claude Code를 다시 켠 뒤 <code>/mcp</code>에서 playwright가 연결됨으로 보여야 한다. 이것이 안 되어
+있으면 리뷰어를 만들어도 브라우저를 열지 못한다. 프로토타입을 만드는 첫 단계는 세팅 없이도
+되지만, 리뷰를 맡기는 단계부터는 반드시 필요하다.</p>
+</blockquote>
+<h3>따라하기 1 — 전 화면 시안과 클릭 프로토타입</h3>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="/designer @docs/화면기획서.md대로 모든 화면을 눌러 볼 수 있는 클릭 프로토타입으로 만들어줘.&#10;- 프레임워크 없이 HTML/CSS로 빠르게. 화면마다 파일 하나씩 design/ 아래에 두고, 화면 흐름대로 버튼과 링크로 연결해. 홈(design/home.html)은 이미 있으니 이어서 써.&#10;- 데이터는 data/ CSV의 실제 행으로 채우고 서버나 DB는 연결하지 마. 매진·입력 오류 같은 상태 화면도 눌러 볼 수 있게 해.&#10;다 되면 어느 파일을 열면 되는지 알려줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">/designer @docs/화면기획서.md대로 모든 화면을 눌러 볼 수 있는 클릭 프로토타입으로 만들어줘.</span><span class="pl" style="padding-left:2ch;text-indent:-2ch">- 프레임워크 없이 HTML/CSS로 빠르게. 화면마다 파일 하나씩 design/ 아래에 두고, 화면 흐름대로 버튼과 링크로 연결해. 홈(design/home.html)은 이미 있으니 이어서 써.</span><span class="pl" style="padding-left:2ch;text-indent:-2ch">- 데이터는 data/ CSV의 실제 행으로 채우고 서버나 DB는 연결하지 마. 매진·입력 오류 같은 상태 화면도 눌러 볼 수 있게 해.</span><span class="pl" style="padding-left:0ch">다 되면 어느 파일을 열면 되는지 알려줘.</span></code></pre></div>
+<p>위 프롬프트를 그대로 복사해 입력하면 된다. 다른 내용으로 바꿔서 해 보고 싶다면 자유롭게 바꿔도 좋다.</p>
+<p>디자이너는 코드를 쓰기 전에 한 번 멈춰 묻는다 — 화면 구성, 토큰을 몇 개 더 만들어도 되는지(테두리
+두께·전환 시간 같은 것), 완료 화면에 표본으로 넣을 주문번호를 어느 것으로 할지. 스킬의 프로세스가
+그렇게 돼 있어서다. 한 프롬프트에 묶어 답한다 — "구성 좋아. 토큰은 그 다섯 개만 추가해. 주문번호는
+orders.csv에 있는 것 하나를 그대로 써, 지어내지 마." 매진이나 입력 오류를 보여 주려고 표본값을 바꾼다고 하면
+"바꾼 화면에는 표본값을 바꿨다고 작게 적어 둬"라고 덧붙인다. 디자이너가 Chrome을 띄워 스크린샷을 찍으려
+하면 "지금은 캡처하지 마"라고 한다. 눈으로 보는 일은 다음 따라하기에서 세울 리뷰어의 몫이다.</p>
+<p>만들어지면 <strong>사람이 먼저 한 바퀴 눌러 본다.</strong> 누르기 전에 예측을 하나 적어 두자 — <em>"매진된
+등급을 누르면 화면에서 무슨 일이 일어날까? 이메일 항목만 비워 두면 예매하기 버튼은 어떻게
+보일까?"</em> 화면기획서에 뭐라고 썼는지 떠올려 적은 뒤, <code>design/home.html</code>을 브라우저로 열어
+예매하는 고객이 되어 밟아 본다.</p>
+<ul>
+<li>이벤트 목록 → 상세 → 예매 → 결제 → 완료까지 끊기지 않고 넘어가는가</li>
+<li>화면마다 <strong>되돌아가는 길</strong>이 있는가. 결제 화면에서 취소하면 예매로 돌아오는가</li>
+<li>매진 등급이 골라지지 않는가. 등급·수량·이메일을 하나씩 비워 보면 예매하기가 화면기획서에 적은 대로 동작하는가</li>
+<li>마이티켓에 아무 값이나 넣으면 '일치하는 주문 없음' 안내문이 같은 화면에 나오는가</li>
+<li>완료 화면에서 다음에 갈 곳이 있는가</li>
+</ul>
+<p>예측과 다른 곳이 있었다면 둘 중 하나다. 시안이 기획서를 어겼거나, 기획서가 애초에 그
+경우를 적지 않았거나. 앞의 경우면 시안을, 뒤의 경우면 <strong>기획서부터</strong> 고친다. 고칠 곳은
+형용사 없이 구체적으로 지시한다 — "예매 화면에 상세로 돌아가는 '뒤로' 링크가 없어.
+화면 왼쪽 위에 추가해줘"처럼.</p>
+<p>여기서 AI가 한 일은 열 화면을 그리고 잇는 것이다. 사람이 한 일은 <strong>직접 눌러 보고
+흐름과 상태가 기획서대로인지 판정한 것</strong>이다.</p>
+<h3>따라하기 2 — 리뷰어 서브에이전트 생성</h3>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="'디자인 리뷰어' 서브에이전트를 만들어줘. 시안과 프로토타입을 웹 브라우저로 직접 열어 보고, design/tokens.css·design/금지목록.md·docs/화면기획서.md를 기준으로 문제를 찾아 심각한 순서로 보고한다.&#10;보고 확인만 하고, 파일을 고치거나 명령을 실행하지 않는다.&#10;&quot;디자인 리뷰 해줘&quot;라는 요청이 오면 이 에이전트가 맡는다.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">'디자인 리뷰어' 서브에이전트를 만들어줘. 시안과 프로토타입을 웹 브라우저로 직접 열어 보고, design/tokens.css·design/금지목록.md·docs/화면기획서.md를 기준으로 문제를 찾아 심각한 순서로 보고한다.</span><span class="pl" style="padding-left:0ch">보고 확인만 하고, 파일을 고치거나 명령을 실행하지 않는다.</span><span class="pl" style="padding-left:0ch">&quot;디자인 리뷰 해줘&quot;라는 요청이 오면 이 에이전트가 맡는다.</span></code></pre></div>
+<p>사람이 말한 것은 무엇을 하는지, 무엇을 기준으로 보는지, 무엇을 하지 않는지다. 문제의 등급을 무엇이라
+부를지, 어떤 도구를 쥐여 줄지, 어느 화면 폭에서 볼지, 리포트를 어떤 표로 낼지는 적지 않았다. "고치거나
+명령을 실행하지 않는다"고 말하면 리뷰어가 그에 맞게 도구를 고른다. 리뷰어가 정하고,
+사람은 아래 확인에서 정의 파일을 읽고 판정한다.</p>
+<p>위 프롬프트를 그대로 복사해 입력하면 된다. 다른 내용으로 바꿔서 해 보고 싶다면 자유롭게 바꿔도 좋다.</p>
+<p>생성된 파일을 <strong>직접 열어 눈으로 확인한다.</strong> 권한 줄 한 줄이 이 역할의 전부다.</p>
+<ul>
+<li>머리말이 <code>---</code>로 열리고 닫히는가, 그 안에 <code>name</code>·<code>description</code>·<code>tools</code>가 있는가</li>
+<li><code>tools:</code> 줄이 <strong>있는가</strong>(없으면 전부 상속한다), 그 안에 Edit·Write·Bash가 <strong>없는가</strong></li>
+<li>브라우저 도구의 이름이 <code>mcp__playwright__</code>로 시작하는가. 위 '리뷰어 설계'에서 본 일곱 개(열기·창 크기·스크린샷·구조 읽기·누르기·글자 넣기·목록 고르기)를 넘어서는 도구가 끼어 있지 않은가</li>
+<li>본문에 화면 폭을 여러 개(넓은 화면·중간·휴대폰)로 바꿔 가며 찍는다는 것, 스크린샷 이름에 화면과 폭이 드러난다는 것,
+  화면기획서의 흐름대로 눌러 본다는 것, 지적마다 위치·근거·증거를 붙인다는 것이 있는가.
+  빠진 것은 한 줄로 보태게 한다. 예: "화면 폭을 1440·768·375 세 가지로 바꿔 찍도록 추가해줘"</li>
+<li>리포트 형식에 <strong>종합 판정 줄</strong>이 있는가</li>
+</ul>
+<p>파일을 쓴 것은 AI이고, <code>tools:</code> 줄을 한 자씩 짚어 <strong>이 역할이 무엇을 할 수 없어야 하는지</strong>를
+확인한 것은 사람이다.</p>
+<h3>따라하기 3 — 시안 서버를 띄우고 리뷰를 맡긴다</h3>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="시안 서버 띄워서 주소 알려줘. 내가 브라우저로 확인해볼게.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">시안 서버 띄워서 주소 알려줘. 내가 브라우저로 확인해볼게.</span></code></pre></div>
+<p>받은 주소를 브라우저로 열어 홈 시안이 뜨는지 <strong>사람이 먼저</strong> 확인한다. 사람 눈에 안 열리는 주소는
+리뷰어에게도 안 열린다.</p>
+<p>리뷰를 맡기기 전에 예측을 하나 적어 두자 — <em>"세 폭 가운데 어느 폭에서 지적이 가장 많이
+나올까? 왜 그렇게 생각하는가?"</em> 그다음 Claude Code 세션으로 돌아와 리뷰를 맡긴다.</p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="디자인 리뷰 해줘">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">디자인 리뷰 해줘</span></code></pre></div>
+<p>위 프롬프트를 그대로 복사해 입력하면 된다. 다른 내용으로 바꿔서 해 보고 싶다면 자유롭게 바꿔도 좋다.</p>
+<p>주소는 다시 말하지 않아도 된다. 서버를 띄운 이 세션이 리뷰어에게 주소를 넘긴다.</p>
+<p>리뷰어가 브라우저 도구를 쓸 때마다 승인 창이 뜬다. 창에 찍힌 도구 이름을 읽어 보라 —
+<code>mcp__playwright__browser_navigate</code>, <code>…browser_resize</code>, <code>…browser_take_screenshot</code>.
+정의 파일에 적은 그 이름들이 실제로 불리고 있다. 시간이 걸리는 작업이니 기다리는 동안
+<code>design/screenshots/</code> 폴더를 열어 두면 <code>home-1440.png</code>, <code>home-768.png</code>, <code>home-375.png</code>…
+파일이 하나씩 쌓이는 것이 보인다.</p>
+<p>리포트에서 확인할 것:</p>
+<ul>
+<li>열 화면·세 폭을 모두 언급하는가 (일부만 보고 끝냈다면 프로세스 위반 — 지적하라)</li>
+<li>흐름과 상태를 <strong>눌러 본 결과</strong>가 적혀 있는가 (코드를 읽고 추측한 것이 아닌가)</li>
+<li>지적마다 근거(토큰 값, 금지목록 몇 번 조항, 화면기획서의 어느 항목)가 붙어 있는가</li>
+<li>지적마다 증거 스크린샷 파일명이 있고, <strong>그 파일이 실제로 폴더에 있는가</strong></li>
+<li>종합 판정이 있는가</li>
+</ul>
+<p>리포트가 어떤 모습이면 잘 나온 것인지 예시로 감을 잡아 두자(값은 예시다).</p>
+<pre><code>| 등급    | 위치             | 문제                              | 근거                               | 증거 스크린샷            |
+|---------|------------------|-----------------------------------|------------------------------------|--------------------------|
+| Blocker | 예매 375px       | 등급 가격이 &quot;99,0…&quot;으로 잘림      | 등급 한 줄 폭 &lt; 가격 글자 길이     | booking-375.png          |
+| Blocker | 예매 (전 폭)     | 매진 등급을 누르면 골라짐         | 화면기획서 '티켓 등급 한 줄' 매진  | booking-soldout-1440.png |
+| Major   | 홈 1440px        | 회색 날짜 글씨가 배경에 묻힘      | 대비 부족(가독성)                  | home-1440.png            |
+| Major   | 결제 (전 폭)     | 예매로 돌아가는 '취소'가 없음     | 화면기획서 화면 흐름               | payment-768.png          |
+| Minor   | 전 화면 헤더     | 로고와 메뉴 간격이 좁음           | 간격 8px 배수 규칙에서 6px         | home-1440.png            |
+
+종합 판정: 반려 (Blocker 2건)
+</code></pre>
+<p>이 표에서 배울 점 — 위치에 <strong>화면과 폭이 들어가고</strong>, 근거가 "느낌"이 아니라 토큰 값·
+금지목록 조항·화면기획서 항목 같은 <strong>확인 가능한 사실</strong>이며, 증거 파일을 열면 그 문제가
+<strong>실제로 보인다.</strong> 증거 스크린샷 두어 장은 꼭 직접 열어 보자. 리뷰어가 본 것과 내가 보는
+것이 같은지 확인하는 것까지가 리포트를 받는 일이다. 만약 리포트가 "전반적으로 조금
+아쉽다" 수준이면, 그건 리뷰어가 근거 규칙을 안 지킨 것이다. 그럴 때는 근거를 붙여 다시
+쓰라고 시키면 된다.</p>
+<p>화면을 열고, 폭을 바꾸고, 누르고, 찍은 것은 리뷰어다. <strong>어떤 지적을 받아들일지</strong>는 아직
+아무도 정하지 않았다 — 그것이 사람의 몫이고, 반영 단계에서 한다.</p>
+<h3>따라하기 4 — 수정사항을 반영시킨다</h3>
+<p>리포트를 받았으면 고칠 차례다. 입력하기 전에 예측을 하나 적어 두자 — <em>"리뷰어가 찾은 문제를
+왜 리뷰어가 직접 고치지 않고 디자이너에게 맡길까?"</em></p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="방금 받은 디자인 리뷰에서 반영하기로 한 항목을 /designer로 수정해줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">방금 받은 디자인 리뷰에서 반영하기로 한 항목을 /designer로 수정해줘.</span></code></pre></div>
+<p>위 프롬프트를 그대로 복사해 입력하면 된다. 다른 내용으로 바꿔서 해 보고 싶다면 자유롭게 바꿔도 좋다.</p>
+<p>일은 디자이너(<code>/designer</code>)에게 간다. 화면을 만들고 고치는 것이 그 역할의 일이고, 리뷰어는
+편집 도구가 없어 고칠 수 없기 때문이다. 디자이너는 방금 받은 리포트의 지적을 읽고 <code>design/</code>의
+파일을 고친 뒤 무엇을 바꿨는지 보고한다. 받아들이지 않을 지적이 있으면 지시를 구체화한다 —
+"Minor 항목은 제외하고 /designer로 수정해줘"처럼. <strong>어느 지적을 받아들일지 정하는 것은 사람이다.</strong></p>
+<p>고친 결과는 시안 서버에 바로 반영된다. 브라우저를 새로고침해 Blocker로
+지적됐던 곳을 직접 열어 고쳐졌는지 본다. 다시 리뷰를 받고 싶으면 "디자인 리뷰 해줘"를 한 번
+더 보내면 된다. 리뷰와 반영이 끝나면 "시안 서버 꺼줘"라고 해서 서버를 끈다.</p>
+<p>화면을 열고, 누르고, 찍고, 지적한 것은 리뷰어다. 고친 것은 디자이너다. <strong>무엇을 고칠지
+고른 것은 사람이다.</strong></p>
+<h3>완료 기준 체크리스트</h3>
+<ul>
+<li><code>design/</code> 에 열 화면의 시안이 있고, 홈에서 완료까지 <strong>눌러서</strong> 갈 수 있으며
+  화면마다 되돌아가는 길이 있다</li>
+<li>매진 등급은 골라지지 않고, 등급·수량·이메일이 비면 예매하기 버튼이 비활성이다</li>
+<li><code>node --version</code>·<code>npx --version</code>이 버전을 대답하고, 프로젝트에 <code>.mcp.json</code>이 있으며
+  <code>/mcp</code>에서 playwright가 연결됨으로 나온다</li>
+<li><code>.claude/agents/design-reviewer.md</code> 가 존재하고 <code>tools:</code> 줄에 Edit·Write·Bash가 없다</li>
+<li><code>design/screenshots/</code> 에 화면마다 세 폭의 스크린샷이 있다(리뷰어가 찍은 것이다)</li>
+<li>등급·근거·증거 스크린샷·종합 판정이 있는 리뷰 리포트를 받았고, 증거 파일을 직접 열어 보았다</li>
+<li>반영하기로 한 지적을 <code>/designer</code>로 수정했고, Blocker로 지적된 곳이 고쳐진 것을 직접 열어 확인했다</li>
+</ul>
+<hr />
+<h2>6.7 정리</h2>
+<ul>
+<li>시안은 <strong>한 화면의 모습</strong>이고 프로토타입은 <strong>화면들의 이어짐</strong>이다. 데이터는 껍데기여도
+  화면 전환은 진짜다. 흐름을 고치는 비용이 거의 0인 지금, <strong>싸게 고칠 수 있을 때 흐름을
+  확정한다.</strong> 화면기획서에 글로 적은 흐름과 상태는 눌러 보는 순간 검증된다.</li>
+<li><strong>만든 사람이 검사하지 않는다.</strong> 같은 선입견으로 만들고 보면 검토가 아니다.
+  감사팀·QA·데스크·편집자 — 사람 조직의 오래된 답을 AI 팀에도 적용한다.</li>
+<li>디자인 리뷰는 <strong>눈으로</strong> 한다. 겹침·잘림·대비·정렬은 코드에 안 보인다. 리뷰어는
+  브라우저를 직접 열어 세 가지 폭(1440·768·375)으로 찍고, 눌러 본다.</li>
+<li><strong>MCP</strong>는 AI를 폴더 밖 세계와 잇는 통로이고, <strong>Playwright MCP</strong>는 그 통로로 AI에게
+  브라우저를 쥐여 준다. 이것이 <strong>Node.js</strong> 위에서 돌기 때문에 지금 Node를 깔았다 —
+  Claude Code를 설치할 때는 도구를 깔았고, 지금은 그 도구가 부릴 프로그램을 돌린다.</li>
+<li>MCP를 <code>--scope project</code>로 추가하면 설정이 <code>.mcp.json</code>에 적혀 <strong>프로젝트와 함께
+  움직인다.</strong> MCP는 Claude Code가 시작될 때 연결되므로, 추가한 뒤에는 다시 켠다.</li>
+<li>리뷰어는 <strong>스킬이 아니라 서브에이전트</strong>로 만든다. 서브에이전트는 자기만의
+  도구 권한(<code>tools</code>)을 가진다. <code>tools</code>를 생략하면 전부 상속하므로 <strong>반드시 명시한다.</strong></li>
+<li>리뷰어의 손에는 읽기·검색과 브라우저 도구 일곱 개만 있다. <strong>브라우저는 눌러도 파일은
+  못 고친다.</strong> "고치지 마"라는 부탁이 "고칠 수 없다"는 구조가 된다 — 보는 데 필요한
+  만큼만 쥐여 준다(최소 권한 원칙).</li>
+<li>지적에는 <strong>등급과 근거와 증거 스크린샷</strong>을 요구하라. Blocker는 반드시, Minor는 사람이
+  고른다 — 리뷰는 정보이지 명령이 아니다.</li>
+<li>반영은 <strong>리뷰어가 아니라 디자이너</strong>의 일이다. 본다-고른다-고친다의 삼각형이
+  한 바퀴 도는 것이 품질의 최소 단위다. 열고 누르고 찍은 것은 리뷰어이고, 어떤 지적을
+  받아들일지 정한 것은 사람이다.</li>
+<li><strong>역할을 제대로 정의해 두면 지시를 짧게 쓸 수 있다.</strong> "디자인 리뷰 해줘", "반영하기로 한
+  항목을 /designer로 수정해줘" — 어디를 열고 무엇을 기준으로 볼지는 정의 파일에 적혀 있다.</li>
+<li>읽기 전용 검토자 패턴은 코드 리뷰·명세 대조·접근성·마이그레이션 검토까지,
+  원본을 지켜야 하는 모든 검토에 쓸 수 있다.</li>
+<li>온티켓이 <strong>어떻게 보이고 어떻게 이어지는지</strong>가 눈으로 확정됐다. <code>design/</code>의 열 화면과
+  <code>docs/화면기획서.md</code>가 그 기록이다. 이제 그 화면들을 어떤 구조 위에 지을지 정할 차례다.</li>
+</ul><div class="pager"><a class="prev" href="ch05.html"><span class="lbl">이전</span>5장. 디자인팀① — 화면기획서와 UI 디자이너</a><a class="next" href="ch07.html"><span class="lbl">다음</span>7장. 아키텍처 결정 — 분리형과 ADR</a></div>
+<footer class="foot"><b>TechLead</b><a href="mailto:macro@prag-ai.com">macro@prag-ai.com</a></footer>
+</div><div class="byline"><b>오명운</b> · macro@prag-ai.com</div><script src="assets/app.js"></script></body></html>

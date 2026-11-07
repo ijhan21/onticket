@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" font-family="Pretendard, sans-serif">
+  <defs>
+    <marker id="g" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 Z" fill="#8a8f98"/></marker>
+  </defs>
+  <rect width="900" height="300" fill="#ffffff"/>
+  <text x="24" y="34" font-size="18" font-weight="700" fill="#0f1419">앞 산출물이 다음 작업의 입력이 된다</text>
+
+  <!-- 1행 -->
+  <g text-anchor="middle">
+    <rect x="24" y="66" width="180" height="64" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="114" y="104" font-size="15" font-weight="700" fill="#0f1419">회의록</text>
+    <rect x="250" y="66" width="180" height="64" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="340" y="104" font-size="15" font-weight="700" fill="#0f1419">PRD</text>
+    <rect x="476" y="66" width="180" height="64" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="566" y="94" font-size="15" font-weight="700" fill="#0f1419">화면기획서</text>
+    <text x="566" y="115" font-size="12" fill="#5b6472">화면이 원하는 것</text>
+    <rect x="702" y="66" width="180" height="64" rx="12" fill="#fff7ed" stroke="#c2410c" stroke-width="2"/>
+    <text x="792" y="94" font-size="15" font-weight="700" fill="#c2410c">ERD·DB</text>
+    <text x="792" y="115" font-size="12" fill="#9a3412">가진 것</text>
+    <text x="792" y="56" font-size="12" font-weight="700" fill="#c2410c">이 장</text>
+  </g>
+  <g stroke="#8a8f98" stroke-width="1.8" fill="none">
+    <line x1="206" y1="98" x2="245" y2="98" marker-end="url(#g)"/>
+    <line x1="432" y1="98" x2="471" y2="98" marker-end="url(#g)"/>
+    <line x1="658" y1="98" x2="697" y2="98" marker-end="url(#g)"/>
+    <!-- ERD → API 명세서 -->
+    <path d="M792,132 V172 H114 V203" marker-end="url(#g)"/>
+  </g>
+
+  <!-- 2행 -->
+  <g text-anchor="middle">
+    <rect x="24" y="208" width="180" height="64" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="114" y="236" font-size="15" font-weight="700" fill="#0f1419">API 명세서</text>
+    <text x="114" y="257" font-size="12" fill="#5b6472">둘을 잇는 문서</text>
+    <rect x="250" y="208" width="180" height="64" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="340" y="236" font-size="15" font-weight="700" fill="#0f1419">백엔드</text>
+    <text x="340" y="257" font-size="12" fill="#5b6472">명세 + DB</text>
+    <rect x="476" y="208" width="180" height="64" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+    <text x="566" y="236" font-size="15" font-weight="700" fill="#0f1419">프론트엔드</text>
+    <text x="566" y="257" font-size="12" fill="#5b6472">명세 + 돌아가는 백엔드</text>
+  </g>
+  <g stroke="#8a8f98" stroke-width="1.8" fill="none">
+    <line x1="206" y1="240" x2="245" y2="240" marker-end="url(#g)"/>
+    <line x1="432" y1="240" x2="471" y2="240" marker-end="url(#g)"/>
+  </g>
+</svg>

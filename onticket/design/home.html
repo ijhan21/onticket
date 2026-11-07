@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S01 공연 목록 — 온티켓 프로토타입</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+<div class="proto-strip" id="strip"></div>
+
+<main class="screen" aria-label="S01 공연 목록">
+  <header class="top">
+    <a class="wordmark" href="home.html">온티켓<span class="wordmark-dot">.</span></a>
+    <a class="top-link" href="ticket.html">티켓 조회</a>
+  </header>
+  <div class="body" id="view"></div>
+</main>
+
+<script src="proto-data.js"></script>
+<script src="proto.js"></script>
+<script>
+  const view = document.getElementById('view');
+  let state = P.param('state') || '기본';
+
+  function list() {
+    // 서버가 준 판매중·매진 공연을 시작일시 순으로 (D7·D20). 판매종료는 놓지 않는다.
+    return P.events()
+      .filter(e => e.판매상태 === '판매중' || e.판매상태 === '매진')
+      .sort((a, b) => a.시작일시.localeCompare(b.시작일시));
+  }
+
+  function render() {
+    if (state === '로딩') {
+      const sk = '<div class="skel"><div class="skel-poster"></div><div class="skel-lines"><div class="skel-line"></div><div class="skel-line w2"></div><div class="skel-line w3"></div></div></div>';
+      view.innerHTML = `<div class="list" aria-busy="true" aria-hidden="true">${sk}${sk}${sk}</div>`;
+      return;
+    }
+    if (state === '불러오기 실패') {
+      view.innerHTML = `
+        <div class="notice">
+          <p class="msg error" role="alert">${P.ICON.alert}<span>공연 목록을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.</span></p>
+          <button class="btn" type="button" id="retry">다시 시도</button>
+        </div>`;
+      document.getElementById('retry').onclick = () => { state = '기본'; renderStrip(); render(); };
+      return;
+    }
+    const items = state === '빈 목록' ? [] : list();
+    if (!items.length) {
+      view.innerHTML = '<div class="notice"><p>지금 예매할 수 있는 공연이 없어요.</p></div>';
+      return;
+    }
+    view.innerHTML = '<ul class="list">' + items.map(e => `
+      <li><a class="item" href="event.html?id=${e.event_id}">
+        <div class="poster" aria-hidden="true">${P.esc(e.제목)}</div>
+        <div class="info">
+          <h2 class="item-title">${P.esc(e.제목)}</h2>
+          <p class="meta">${P.esc(e.카테고리)}</p>
+          <p class="meta num">${P.fmtDate(e.시작일시)}</p>
+          <p class="meta">${P.esc(e.장소)} · ${P.esc(e.도시)}</p>
+          ${P.soldOut(e) ? '<span class="badge">매진</span>' : ''}
+        </div>
+      </a></li>`).join('') + '</ul>';
+  }
+
+  function renderStrip() {
+    const s = (text) => ({ text, pressed: state === text, onClick: () => { state = text; renderStrip(); render(); } });
+    P.strip(document.getElementById('strip'), 'S01 공연 목록 · 공연을 누르면 S02로 간다. 매진 예시: 팬미팅(판매상태 매진), 클래식 갈라(모든 등급 잔여수량 0)', [
+      { label: '상태', buttons: [s('기본'), s('로딩'), s('빈 목록'), s('불러오기 실패')] },
+      { label: '바로 가기', buttons: [
+        { text: '판매종료 공연 주소로 열기(S02)', href: 'event.html?id=EV004' },
+        { text: '운영 서비스(S06)', href: 'admin-login.html' },
+        P.resetButton(),
+      ] },
+    ]);
+  }
+  renderStrip();
+  render();
+</script>
+</body>
+</html>

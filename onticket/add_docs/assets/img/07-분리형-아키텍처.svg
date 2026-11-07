@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 440" font-family="Pretendard, sans-serif">
+  <rect width="840" height="440" fill="#ffffff"/>
+  <text x="40" y="40" font-size="19" font-weight="700" fill="#0f1419">온티켓의 분리형 아키텍처 — 구성과 배포 환경</text>
+  <text x="40" y="62" font-size="13" fill="#5b6472">화면·API 서버·DB를 나누고, 각각 무료 클라우드에 따로 배포한다</text>
+
+  <!-- 사용자 -->
+  <rect x="60" y="100" width="120" height="56" rx="10" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="120" y="125" font-size="14" font-weight="700" fill="#0f1419" text-anchor="middle">고객</text>
+  <text x="120" y="144" font-size="11" fill="#5b6472" text-anchor="middle">브라우저</text>
+
+  <!-- 프론트 -->
+  <rect x="250" y="92" width="200" height="72" rx="11" fill="#fff" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="350" y="118" font-size="15" font-weight="700" fill="#0f1419" text-anchor="middle">web/ (프론트엔드)</text>
+  <text x="350" y="138" font-size="11.5" fill="#5b6472" text-anchor="middle">Next.js · 화면만 담당</text>
+  <text x="350" y="154" font-size="11" fill="#c2410c" text-anchor="middle">→ Vercel에 배포</text>
+
+  <!-- API -->
+  <rect x="250" y="212" width="200" height="72" rx="11" fill="#fff" stroke="#c2410c" stroke-width="2"/>
+  <text x="350" y="238" font-size="15" font-weight="700" fill="#c2410c" text-anchor="middle">api/ (API 서버)</text>
+  <text x="350" y="258" font-size="11.5" fill="#5b6472" text-anchor="middle">Hono · 검증과 계산 담당</text>
+  <text x="350" y="274" font-size="11" fill="#c2410c" text-anchor="middle">→ Cloudflare Workers에 배포</text>
+
+  <!-- DB -->
+  <rect x="250" y="332" width="200" height="72" rx="11" fill="#fff" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="350" y="358" font-size="15" font-weight="700" fill="#0f1419" text-anchor="middle">데이터베이스</text>
+  <text x="350" y="378" font-size="11.5" fill="#5b6472" text-anchor="middle">PostgreSQL · 데이터 저장</text>
+  <text x="350" y="394" font-size="11" fill="#c2410c" text-anchor="middle">→ Supabase (관리형)</text>
+
+  <!-- 연결선 -->
+  <line x1="180" y1="128" x2="246" y2="128" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#a8)"/>
+  <line x1="350" y1="164" x2="350" y2="208" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#a8)"/>
+  <text x="362" y="190" font-size="11.5" fill="#48515e">API 요청 (HTTP)</text>
+  <line x1="350" y1="284" x2="350" y2="328" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#a8)"/>
+  <text x="362" y="312" font-size="11.5" fill="#48515e">조회·저장 (SQL)</text>
+
+  <!-- 오른쪽 원칙 박스 -->
+  <rect x="500" y="92" width="290" height="312" rx="12" fill="#fbf7f4" stroke="#e0cabd" stroke-width="1.2"/>
+  <text x="520" y="118" font-size="14" font-weight="700" fill="#c2410c">왜 나누는가</text>
+  <g font-size="12.5" fill="#0f1419">
+    <text x="520" y="146">· 금액 계산·재고 검증은 서버에서</text>
+    <text x="534" y="164" fill="#5b6472">화면에서 보낸 값은 서버에서 검증</text>
+    <text x="520" y="190">· 앱을 추가해도 같은 API를</text>
+    <text x="534" y="208" fill="#5b6472">사용한다 (클라이언트만 추가)</text>
+    <text x="520" y="234">· 각 구성 요소를 따로 배포·교체·확장</text>
+  </g>
+  <line x1="520" y1="256" x2="770" y2="256" stroke="#e0cabd"/>
+  <text x="520" y="280" font-size="13" font-weight="700" fill="#c2410c">무료 사용 범위에서는 월 0원</text>
+  <g font-size="12" fill="#0f1419">
+    <text x="520" y="304">Vercel — 프론트엔드 호스팅</text>
+    <text x="520" y="326">Cloudflare Workers — 서버리스,</text>
+    <text x="534" y="343" fill="#5b6472">절전 모드 없음 · 하루 10만 요청</text>
+    <text x="520" y="366">Supabase — DB 설치·백업 관리</text>
+    <text x="520" y="390" fill="#5b6472">사용량이 늘면 유료 요금제로 전환</text>
+  </g>
+
+  <defs>
+    <marker id="a8" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 Z" fill="#8a8f98"/></marker>
+  </defs>
+</svg>

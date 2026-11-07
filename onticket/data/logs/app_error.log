@@ -1,0 +1,15 @@
+2026-09-12 17:40:00 INFO  [checkin-api] gate service started (v1.4.2) env=production
+2026-09-12 17:41:00 INFO  [checkin-api] loaded event EV004 <골목 라이브 vol.7> gates=A,B
+2026-09-12 17:43:00 INFO  [checkin-api] QR scan gate=B게이트 qr=OT-0064-1967
+2026-09-12 17:43:00 INFO  [checkin-api] order ORD-20260828-0064 found (status=환불) -> ENTRY ALLOWED
+2026-09-12 17:43:00 DEBUG [checkin-api] holder=배도윤 phone=010-9610-2188 email=nyjung59@kakao.com
+2026-09-12 17:47:00 INFO  [checkin-api] QR scan gate=B게이트 qr=OT-0180-4F6B
+2026-09-12 17:47:00 INFO  [checkin-api] order ORD-20260807-0180 found (status=환불) -> ENTRY ALLOWED
+2026-09-12 17:47:00 DEBUG [checkin-api] holder=윤윤서 phone=010-4401-6925 email=jhcho11@nate.com
+2026-09-12 17:51:00 INFO  [checkin-api] QR scan gate=B게이트 qr=OT-0258-BD44
+2026-09-12 17:51:00 INFO  [checkin-api] order ORD-20260818-0258 found (status=환불) -> ENTRY ALLOWED
+2026-09-12 17:51:00 DEBUG [checkin-api] holder=전윤서 phone=010-2945-2753 email=mjlee18@kakao.com
+2026-09-12 17:55:00 WARN  [checkin-api] duplicate scan qr=OT-0064-1967 gate=B게이트 -> ENTRY ALLOWED (no dedup)
+2026-09-12 17:57:00 ERROR [payment-webhook] signature verify skipped: TOSS_WEBHOOK_SECRET not set, fallback=accept
+2026-09-12 17:58:00 INFO  [checkin-api] summary gate=B게이트 scanned=214 allowed=214 denied=0
+2026-09-12 17:59:00 INFO  [checkin-api] NOTE: validation rule = qr_exists(order) ; TODO check order.status in ('결제완료','입장완료')?

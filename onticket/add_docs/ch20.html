@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>20장. 프론트엔드 배포 — Vercel과 연결 — AI Driven Development</title>
+<link rel="stylesheet" href="assets/style.css">
+</head><body data-prev="ch19.html" data-next="ch21.html"><div class="wrap">
+<div class="nav"><a class="home" href="index.html">AI Driven Development</a><span class="spacer"></span><a class="btn" href="ch19.html">← 이전</a><a class="btn" href="index.html">목차</a><a class="btn" href="ch21.html">다음 →</a></div>
+<h1>20장. 프론트엔드 배포 — Vercel과 연결</h1>
+<blockquote class="intro">
+<p>이 장이 끝나면: 온티켓의 <strong>모든 과정이 인터넷에서 동작한다.</strong> 공개된 웹
+주소에 접속하면 화면이 뜨고, 그 화면이 배포된 API를 불러 실제로 예매가
+된다. 배포 환경의 <strong>환경변수와 CORS</strong>를 맞춰 두 앱을 잇고, 공개 주소에서
+예매를 처음부터 끝까지 진행하며 확인한다.</p>
+</blockquote>
+<hr />
+<h2>20.1 개념 — 두 앱을 하나의 서비스로</h2>
+<h3>마지막 연결</h3>
+<p>앞 장에서 API 서버를 배포했다. 이 장에서 프론트엔드를 배포하고,
+그 둘을 잇는다. 지금까지 로컬에서 3000↔8787로 통신하던 두 앱이, 이제
+각자의 공개 주소로 인터넷을 통해 통신한다. 이 연결이 완성되는
+순간 온티켓은 '프로젝트'가 아니라 '서비스'가 된다.</p>
+<p>이 대목을 조금 더 풀어 보자. 지금까지 우리가 만든 온티켓은 두 개의 프로그램이
+한 컴퓨터(내 노트북) 안에서 나란히 돌고 있는 상태였다. 프론트엔드는
+<code>localhost:3000</code>, API는 <code>localhost:8787</code>. 둘 다 '내 컴퓨터 안'이라는 같은 방
+안에 있어서, 서로를 부르기가 쉬웠다. 하지만 이건 나만 볼 수 있는 세계다.
+전원을 끄면 사라지고, 옆자리 동료에게 보여 줄 수도 없다. '만들었다'고는 할 수
+있어도 '서비스한다'고는 할 수 없다.</p>
+<p>배포(deploy)란 이 프로그램을 <strong>내 컴퓨터 밖, 항상 켜져 있는 인터넷상의
+컴퓨터로 옮겨 누구나 접속할 수 있게 하는 일</strong>이다. 'deploy'는 원래 군대를
+'배치한다'는 뜻인데, 소프트웨어에서는 코드를 실제 서비스되는 자리에 갖다
+놓는다는 의미로 굳어졌다. API는 이미 배포했다. 이 장에서는 프론트엔드도 배포하고,
+두 앱이 서로 통신할 수 있도록 연결한다. 이 연결이 이 장의 핵심이다.</p>
+<h3>로컬에서 배포로 — 무엇이 달라지나</h3>
+<p>같은 코드인데 환경이 바뀌면 두 가지를 다시 맞춰야 한다.</p>
+<ol>
+<li><strong>API 주소</strong>: 로컬에선 <code>localhost:8787</code>이었다. 배포된 프론트는 배포된
+   API 주소(<code>onticket-api....workers.dev</code>)로 요청을 보내야 한다 — 환경변수를
+   프로덕션 값으로</li>
+<li><strong>CORS</strong>: API 서버가 허용하는 출처가 <code>localhost:3000</code>이었다. 이제 배포된
+   프론트의 주소도 허용해야 한다 — 안 그러면 프론트엔드를 처음 붙일 때 만난 그 CORS의 벽이 프로덕션에서
+   다시 나타난다</li>
+</ol>
+<p>이 둘은 배포 초보가 반드시 부딪히는 지점이다. 미리 알고 넘으면 당황하지 않는다.</p>
+<p>왜 하필 이 둘일까? 답은 간단하다. 로컬에서는 프론트와 API가 <strong>같은 컴퓨터
+안에서 실행되었고</strong>, 로컬 주소와 CORS 허용 출처를 이미 설정해 두었다.
+배포하면 둘이 서로 다른 회사의 서버, 서로 다른 인터넷 주소로
+흩어진다. 그러면 "너 어디 있어?"(주소)와 "너를 믿어도 돼?"(CORS 허용)를 다시
+명시적으로 알려 줘야 한다. 이 두 가지는 성격이 다르다.</p>
+<table>
+<thead>
+<tr>
+<th>다시 맞출 것</th>
+<th>로컬 값</th>
+<th>배포 값</th>
+<th>어디를 고치나</th>
+<th>성격</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>API 주소</strong></td>
+<td><code><a href="http://localhost:8787" target="_blank" rel="noopener noreferrer">http://localhost:8787</a></code></td>
+<td><code>https://onticket-api....workers.dev</code></td>
+<td>프론트의 환경변수 (Vercel)</td>
+<td>"상대가 어디 있는지"</td>
+</tr>
+<tr>
+<td><strong>CORS 허용 출처</strong></td>
+<td><code><a href="http://localhost:3000" target="_blank" rel="noopener noreferrer">http://localhost:3000</a></code></td>
+<td><code>https://&lt;프론트&gt;.vercel.app</code></td>
+<td>API의 CORS 설정 (api 코드)</td>
+<td>"상대를 믿어도 되는지"</td>
+</tr>
+</tbody>
+</table>
+<p>주소를 고치는 곳은 <strong>프론트 쪽</strong>(프론트가 API를 부르니까)이고, 허용을 고치는
+곳은 <strong>API 쪽</strong>(API가 프론트를 받아 주니까)이라는 점을 헷갈리지 말자. 초보가
+가장 자주 뒤섞는 지점이다. "화면이 안 나온다 → 프론트를 고쳐야지"라고 착각하기
+쉬운데, CORS 문제라면 실제로 손대야 할 곳은 API다. 로컬에서 프론트를 붙일 때 이미 겪은
+원리이고, 프로덕션이라고 달라지지 않는다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 이 표 한 장이 이 장 전체의 지도다. 나중에 "화면은
+뜨는데 목록이 안 나와요" 같은 상황을 만나면 이 표로 돌아오면 된다. "지금 문제는
+'주소'인가 '허용'인가?"를 먼저 묻는 습관을 들여두면 좋다. 콘솔에 CORS
+에러가 찍혀 있으면 허용(API), 요청이 아예 엉뚱한 곳으로 가면 주소(환경변수)다.</p>
+</blockquote>
+<hr />
+<h2>20.2 용어 정리</h2>
+<p>이 장에서 처음, 또는 본격적으로 만나는 용어들이다. 배포는 낯선 단어가 몰려
+나오는 구간이라 여기서 한 번 정리하고 가면 실습이 훨씬 수월하다. 완벽히 외울
+필요는 없다 — "이런 게 있구나" 정도로 눈에 익혀 두면 된다.</p>
+<h3>Vercel</h3>
+<p><strong>Vercel</strong>은 프론트엔드(Next.js) 배포에 특화된 호스팅이다. <strong>호스팅(hosting)</strong> 이란
+내 웹사이트를 항상 켜져 있는 남의 컴퓨터(서버)에 올려 두고, 전 세계 방문자가 접속할
+수 있게 해 주는 서비스를 말한다. 옛날에는 서버 컴퓨터를 직접 사서 운영체제를 깔고,
+웹 서버 프로그램을 설정하고, 도메인을 연결하는 일을 사람이 다 했다. Vercel은 이 모든
+것을 대신 해 주는 회사다. 특히 <strong>Next.js를 만든 회사가 직접 운영하는 호스팅</strong>이라,
+Next.js 앱을 올리면 별다른 설정 없이도 최적의 상태로 배포된다. 이 궁합 때문에 온티켓의
+프론트(Next.js)를 Vercel에 올린다. (인프라를 정리할 때 vercel CLI에 로그인해 둔 것이
+이 배포의 준비였다.)</p>
+<p>Vercel 말고 다른 선택지도 많다. 표로 감을 잡아 두자.</p>
+<table>
+<thead>
+<tr>
+<th>서비스</th>
+<th>특징</th>
+<th>이 과정에서</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Vercel</strong></td>
+<td>Next.js 제작사가 운영. 저장소 연동과 미리보기 배포가 강점</td>
+<td><strong>프론트(web) 배포에 사용</strong></td>
+</tr>
+<tr>
+<td>Netlify</td>
+<td>Vercel과 비슷한 프론트 특화 호스팅. 오래된 경쟁자</td>
+<td>대안. 방식이 거의 같다</td>
+</tr>
+<tr>
+<td>Cloudflare Pages</td>
+<td>Cloudflare의 프론트 호스팅. Workers와 궁합</td>
+<td>대안</td>
+</tr>
+<tr>
+<td>GitHub Pages</td>
+<td>정적 사이트에 특화. 무료·간단하지만 기능 제한</td>
+<td>단순 페이지엔 충분</td>
+</tr>
+<tr>
+<td><strong>Cloudflare Workers</strong></td>
+<td>서버(API) 실행에 특화</td>
+<td><strong>API(api) 배포에 사용(API를 배포하며 완료)</strong></td>
+</tr>
+</tbody>
+</table>
+<p>온티켓은 프론트를 Vercel에, API를 Cloudflare Workers에 나눠 올린다. "왜 한 군데에
+안 몰아넣지?"라는 질문이 나올 수 있는데, 프론트(화면 그리기)와 API(데이터 처리)는
+성격이 다른 작업이므로 각각에 적합한 호스팅을 선택한 것이다. 이렇게 화면과 서버를 갈라서
+배포하는 구조를 <strong>분리형 아키텍처</strong>라 하고, 온티켓은 처음부터 이 구조로 설계됐다.
+배포 환경이 다르기 때문에 이 장 첫머리의 두 가지(주소·CORS)를 맞춰 줄 필요가 생기는
+것이기도 하다.</p>
+<p>요금 이야기도 초보에게는 걱정거리다. Vercel은 <strong>개인·학습용으로 쓸 수 있는 무료
+등급(Hobby)</strong> 을 제공한다. 온티켓처럼 학습용 프로젝트를 배포하고 접속을 확인하는
+정도는 무료 등급 안에서 충분히 소화된다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> Vercel이 뭐고 Cloudflare가 뭔지 자꾸 헷갈리기 쉽다.
+한 줄로 정리하면 이렇다 — <strong>"화면은 Vercel, 서버는 Cloudflare."</strong>
+온티켓의 두 폴더(web/·api/)와 두 호스팅을 짝지어 그려 두면 이후 CORS
+개념이 훨씬 쉽게 잡힌다. 그리고 "무료로 되나?" 하는 걱정도 흔한데, 이 과정은 Hobby 등급
+안에서 모든 실습을 마칠 수 있으니 안심하고 실습하면 된다.</p>
+</blockquote>
+<h3>빌드 (build)</h3>
+<p>우리가 쓴 코드는 사람이 읽기 좋은 형태다. 브라우저가 빠르게 실행하려면
+<strong>압축·최적화된 형태로 변환</strong>해야 하는데, 이 과정이 빌드다. 로컬 개발 서버는
+빌드 없이 즉석 실행했지만, 배포에는 빌드된 결과물이 올라간다. Vercel이
+배포할 때마다 이 빌드를 자동으로 한다. "로컬에선 됐는데 배포에서 깨지는"
+문제의 상당수가 빌드 단계에서 드러난다 — 그래서 배포 후 검증이 중요하다.</p>
+<p>'빌드(build)'는 말 그대로 '짓는다'는 뜻이다. 흩어져 있는 재료(우리가 쓴 여러
+파일)를 모아 하나의 완성된 결과물(브라우저가 바로 실행할 수 있는 최적화된 파일
+묶음)로 조립하는 과정이라 이 이름이 붙었다. 요리에 비유하면, 개발 서버는 고객이
+주문할 때마다 즉석에서 만들어 주는 오픈 키친이고, 빌드는 미리 대량으로 조리해
+포장까지 끝내 두는 것이다. 포장된 완제품이라야 인터넷 어디서든 빠르게 배달될 수
+있다.</p>
+<p>여기서 초보가 자주 놀라는 지점 하나. <strong>로컬 개발 서버에서 잘 돌던 화면이 빌드할
+때 처음으로 에러를 뿜는</strong> 경우가 있다. 개발 서버는 관대해서 몇몇 문제를 눈감고
+넘어가지만, 빌드는 엄격하게 전부 검사하기 때문이다. 대표적으로 타입 오류, 쓰지
+않는 import, 서버에서만 되는 코드를 화면에 섞어 쓴 경우 등이 빌드에서 걸린다.
+이건 실패가 아니라 <strong>"배포 전 최종 점검"</strong>이라고 보면 된다.
+빌드가 막히면 당황하지 말고 에러 원문을 그대로 AI에게 주면 된다.</p>
+<h3>프로덕션 환경변수</h3>
+<p>프론트에도 환경변수가 있다. 로컬은 <code>web/.env.local</code>에
+<code>NEXT_PUBLIC_API_URL=<a href="http://localhost:8787" target="_blank" rel="noopener noreferrer">http://localhost:8787</a></code> 이었다. 배포 환경에서는 이 값을
+<strong>Vercel의 환경변수 설정</strong>에 프로덕션 API 주소로 넣는다. 이름은 같고 값만
+환경마다 다르다 — 코드는 한 글자도 안 바뀐다. 프론트엔드도
+로컬 환경과 배포 환경에서 환경변수 값을 따로 설정한다.</p>
+<p>(주의: <code>NEXT_PUBLIC_</code>으로 시작하는 환경변수는 화면 코드에 포함되어
+브라우저에 노출된다. 그래서 여기엔 <strong>공개돼도 되는 값만</strong> 넣는다 — API 주소는
+공개돼도 되지만, 시크릿 키는 절대 여기 넣지 않는다. 결제를 붙일 때 배운 클라이언트/시크릿 키의
+구분이 여기서도 지켜진다.)</p>
+<p>이 설정을 잘못하면 비밀값이 유출될 수 있으므로 좀 더 자세히 살펴보자.
+먼저 <strong>환경변수(environment variable)</strong> 는 코드 안에 값을 직접 박아 넣는 대신,
+"환경(로컬이냐 배포냐)에 따라 달라지는 값"을 코드 바깥에 따로 빼 둔 것이다.
+API 주소가 대표적이다 — 로컬에선 <code>localhost:8787</code>, 배포에선 <code>...workers.dev</code>.
+값을 바깥에 빼 두었기 때문에, 코드는 <code>NEXT_PUBLIC_API_URL</code>이라는 <strong>이름만
+부르고</strong>, 실제 값은 환경마다 다르게 채워진다. 그래서 "코드는 한 글자도 안
+바뀐다".</p>
+<p>이제 <code>NEXT_PUBLIC_</code>이라는 접두어의 의미다. Next.js에는 두 종류의 코드가 있다 —
+<strong>서버에서만 도는 코드</strong>와 <strong>브라우저(고객의 화면)까지 내려가는 코드</strong>. 환경변수는
+기본적으로 서버에만 머무는데, 이름 앞에 <code>NEXT_PUBLIC_</code>을 붙이면 <strong>"이 값은
+브라우저에 실어 보내도 좋다"</strong> 는 표시가 된다. 접두어의 뜻 그대로 'public(공개)'인
+것이다. 브라우저로 내려간 값은 누구나 개발자 도구를 열어 들여다볼 수 있다 —
+숨길 수 없다.</p>
+<p>여기서 철칙이 나온다.</p>
+<ul>
+<li><code>NEXT_PUBLIC_API_URL</code> (API 주소): <strong>공개돼도 됨.</strong> 어차피 브라우저가 그 주소로
+  요청을 보내니 숨길 수도 없고, 숨길 이유도 없다. 접두어를 붙여도 된다.</li>
+<li>토스 <strong>클라이언트 키</strong>(테스트): 결제창을 브라우저에서 띄우기 위한 키라 애초에
+  공개용으로 설계됐다. 브라우저에 노출돼도 되는 값이다.</li>
+<li>토스 <strong>시크릿 키</strong>, DB 접속 비밀번호 등: <strong>절대 <code>NEXT_PUBLIC_</code>에 넣지 않는다.</strong>
+  이건 서버(api)에서만 사용해야 하는 키다. 브라우저에 포함되는 환경변수에 넣으면
+  누구나 그 값을 볼 수 있다.</li>
+</ul>
+<p>'클라이언트 키'와 '시크릿 키'의 구분은 결제를 붙일 때 이미 배웠다.
+그 구분이 배포에서도 그대로 살아 있다는 것이 핵심이다. 판별법은 한 문장이면
+된다 — <strong>"이 값이 브라우저 개발자 도구에 그대로 보여도 괜찮은가?"</strong> 괜찮으면
+<code>NEXT_PUBLIC_</code>, 안 괜찮으면 서버(api) 환경변수로 보낸다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 여기서 "그럼 시크릿 키는 어디에 두냐"가 헷갈리기 쉽다.
+토스 결제 승인처럼 시크릿 키가 필요한 일은 <strong>프론트가 아니라 api(서버)가</strong>
+한다. 그래서 시크릿 키는 api 쪽 환경변수(API를 배포하며 Cloudflare에 넣은 시크릿)에
+있고, 프론트에는 올 일이 없다. "프론트는 공개 값만, 서버는 비밀 값도"라는
+한 줄로 정리해 두면 헷갈리지 않는다. 실무에서 시크릿 키를 프론트에 잘못 넣어
+유출되는 사고가 흔하니, 이 구분은 확실히 익혀두는 게 좋다.</p>
+</blockquote>
+<hr />
+<h2>20.3 개념 — 배포 순서와 검증 방법</h2>
+<p>두 앱을 잇는 순서는 정해져 있다.</p>
+<pre><code>1. 프론트의 프로덕션 API 주소 설정  (Vercel 환경변수 = 배포된 API URL)
+2. 프론트 배포                      (Vercel이 빌드·배포 → 프론트 공개 URL)
+3. API의 CORS에 프론트 주소 허용     (배포된 프론트 URL을 api 허용 목록에)
+4. 처음부터 끝까지 검증               (공개 화면에서 실제 예매 한 바퀴)
+</code></pre>
+<p><img alt="배포된 web·api·DB가 인터넷에서 연결되는 최종 구조" src="assets/img/20-배포-전체도.svg" /></p>
+<p>3번을 빠뜨리면 화면은 뜨는데 데이터가 안 나온다(CORS 차단). 이때 당황하지
+않는 법은 로컬에서 프론트를 붙일 때 배웠다 — 콘솔의 CORS 에러 원문을 그대로 AI에게 주고,
+"고칠 곳이 api"임을 안다. 프로덕션이라고 원리가 다르지 않다.</p>
+<p>이 순서에는 이유가 있다. 왜 하필 이 순서인지 풀어 보자.</p>
+<ul>
+<li><strong>왜 1번(주소)이 먼저인가</strong>: 프론트를 빌드할 때 <code>NEXT_PUBLIC_API_URL</code> 값이
+  화면 코드 안에 포함된다. 그래서 배포(빌드)하기 <strong>전에</strong> 값이 정해져 있어야
+  한다. 값을 나중에 바꾸면 다시 빌드(재배포)해야 반영된다. 그러니 주소부터.</li>
+<li><strong>왜 3번(CORS)이 2번(프론트 배포) 뒤인가</strong>: CORS 허용 목록에는 <strong>배포된 프론트의
+  진짜 주소</strong>가 들어가야 하는데, 그 주소는 2번에서 배포를 해 봐야 비로소 손에
+  들어온다(<code>https://&lt;프로젝트&gt;.vercel.app</code>). 주소를 모르면 허용할 수도 없으니,
+  프론트를 먼저 띄우고 그 주소를 받아 와 CORS에 넣는 순서가 된다.</li>
+<li><strong>왜 4번(검증)이 맨 끝인가</strong>: 앞의 셋이 다 맞물려야 예매 과정 전체가 정상적으로 동작한다.
+  하나라도 어긋나면 중간에서 끊긴다. 그래서 전부 연결한 뒤 예매 과정을 처음부터 끝까지
+  진행해 본다.</li>
+</ul>
+<p>여기서 가장 중요한 안전장치는 <strong>"3번을 빠뜨려도 화면은 뜬다"</strong> 는 점을 미리
+아는 것이다. 초보는 "화면이 떴으니 다 됐다"고 착각하기 쉽다. 하지만 화면(HTML·CSS)은
+프론트 혼자서 그릴 수 있고, 목록 데이터는 API에서 와야 한다. CORS 허용 전에는
+화면은 멀쩡히 뜨는데 <strong>목록 자리만 비어 있는</strong> 중간 상태가 된다. 이건 고장이
+아니라 <strong>3번을 아직 안 한 정상적인 중간 단계</strong>다. 이 사실을 미리 알면, 그 순간
+당황하지 않고 "아, CORS 차례구나" 하고 다음 단계로 넘어갈 수 있다.</p>
+<p>CORS를 다시 한 줄로 복습하면: 브라우저는 안전을 위해, 화면을 띄운
+출처(origin)와 다른 주소로 요청을 보낼 때 <strong>"저쪽 서버가 나를 허락했는가"</strong> 를
+따진다. 서버가 허락 목록(CORS 허용 출처)에 내 주소를 넣어 두지 않으면, 브라우저가
+스스로 응답을 막아 버린다. 로컬에선 API가 <code>localhost:3000</code>을 허락해 뒀지만,
+배포된 프론트는 주소가 달라졌으니 다시 허락받아야 한다. <strong>전체 허용(<code>*</code>)으로
+뚫어 버리는 것은 금물</strong> — 아무 사이트나 우리 API를 부를 수 있게 되기 때문이다.
+필요한 출처만 콕 집어 허용한다.</p>
+<p>검증의 핵심은 <strong>처음부터 끝까지(E2E)</strong> 다. 조각별로 "떴다"가 아니라, 고객이
+실제로 하는 여정 — 공개 주소 접속 → 목록 → 예매 → 결제 → QR — 이 처음부터
+끝까지 배포된 서비스에서 동작하는지 본다.</p>
+<p>'E2E'는 'End to End(처음부터 끝까지)'의 약자다. 왜 조각 검사로는 부족한가?
+프론트도 떴고, API도 떴고, DB도 살아 있다 — 조각은 다 초록불인데, 정작 고객이
+예매를 못 하는 경우가 있다. 조각 사이의 <strong>연결</strong>(주소·CORS·인증)이 어긋나면,
+개별 부품은 멀쩡해도 여정이 끊긴다. E2E 검증은 부품이 아니라 <strong>고객의 여정
+전체</strong>를 따라가며, 인터넷을 통한 앱 간 연결까지 정상인지 확인한다.
+온티켓에서는 "리버사이드 재즈 목록 → 예매 → 테스트 결제 → QR → DB에 주문 저장"이
+한 줄로 이어지는지를 본다. 이 과정이 모두 성공하면, 온티켓은 정말로 '서비스'가 된 것이다.</p>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 이 절은 "화면 떴으니 끝"이라는 착각을 깨는 자리다. 직접
+CORS 허용 전 상태(화면은 뜨는데 목록이 빈 상태)를 만들어 보고, 콘솔의
+빨간 CORS 에러를 읽은 뒤, 허용을 넣고 새로고침해서 목록이 채워지는
+장면을 확인해 보면 확실히 몸에 남는다. "빈 화면이 고장이 아니라 3번 차례라는 신호"라는
+것을 손으로 익히는 것이 이 절의 목표다.</p>
+</blockquote>
+<hr />
+<h2>20.4 프롬프트 작성법 — 연결하고 검증한다</h2>
+<p>이 장의 지시는 대부분 "설정을 맞추고, 배포하고, 연결을 검증"하는 종류다.
+프롬프트에서 잊지 말아야 할 것은 세 가지다 — <strong>이번에 바뀌는 값</strong>(배포 주소처럼
+사람만 아는 값)을 말하고, <strong>어디를</strong> 고치는지(프론트인지 api인지) 명확히, <strong>무엇이
+보이면 됐는지</strong>(완료 기준)를 넣는 것. 반대로 파일에 이미 적혀 있는 것(필요한 변수의
+이름 같은 것)은 외워서 적지 않고 그 파일을 가리킨다.</p>
+<h3>연결·환경변수·배포를 한 번에</h3>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="web/ 을 Vercel에 연결해줘. 프로젝트를 만들고, web/.env.local의 환경변수를 Production에 등록한 다음 배포해줘.&#10;API 주소는 배포된 주소({배포API URL})로 넣어. 배포가 끝나면 프론트 URL을 알려줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">web/ 을 Vercel에 연결해줘. 프로젝트를 만들고, web/.env.local의 환경변수를 Production에 등록한 다음 배포해줘.</span><span class="pl" style="padding-left:0ch">API 주소는 배포된 주소({배포API URL})로 넣어. 배포가 끝나면 프론트 URL을 알려줘.</span></code></pre></div>
+<p><code>{…}</code> 자리만 실제 주소로 바꿔 입력한다.</p>
+<p>연결(link), 환경변수 등록, 배포를 한 지시로 맡긴다. 셋은 순서가 정해진 한 묶음이라 나눠 시킬
+이유가 없다. 필요한 변수는 <code>web/.env.local</code>에 다 있으니 이름을 외워 적지 않는다. 사람이 말한
+것은 <strong>바뀌는 값</strong> 하나다 — API 주소는 로컬 주소가 아니라 배포된 주소로 넣는다는 것. 이 값은
+API를 배포할 때 메모해 둔 사람만 안다. "프론트 URL을 알려줘"를 붙인 것은 그 주소가 <strong>다음 지시의
+입력값</strong>이기 때문이다.</p>
+<p><code>web/.env.local</code>에 있는 값은 둘 다 공개돼도 되는 값이다 — API 주소와 토스 클라이언트 키. 토스
+<strong>시크릿 키</strong>는 <code>api/.env</code>에만 있어서 여기 섞이지 않는다.</p>
+<h3>그다음에 두 앱을 잇는다</h3>
+<p>CORS는 따로 시킨다. 프론트의 진짜 주소는 배포해 봐야 나오니, 한 지시에 미리 담을 수가
+없다. 주소가 나온 뒤에 이어서 말한다.</p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="방금 나온 프론트 주소를 api의 CORS 허용 출처에 추가하고 api를 재배포해줘.&#10;로컬(localhost:3000)도 개발용으로 유지하고, 전체 허용(*)은 쓰지 마.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">방금 나온 프론트 주소를 api의 CORS 허용 출처에 추가하고 api를 재배포해줘.</span><span class="pl" style="padding-left:0ch">로컬(localhost:3000)도 개발용으로 유지하고, 전체 허용(*)은 쓰지 마.</span></code></pre></div>
+<p>사람이 주소를 받아 다시 적어 넣지 않는다. <strong>그 주소를 방금 손에 넣은 AI에게 이어서
+시키는</strong> 편이 짧고 정확하다.</p>
+<p>이 지시에는 좋은 제약이 세 겹 들어 있다 — (1) <strong>고칠 곳이 api</strong>라고 지목한 것
+(CORS 설정은 api 코드에 있다), (2) <strong>로컬도 유지</strong>(개발을 계속해야 하니까),
+(3) <strong>전체 허용 금지</strong>(아무 사이트나 우리 API를 부를 수 있게 되니까). 그리고
+<strong>api 재배포까지</strong> 시킨 것 — 코드만 고치고 배포하지 않으면 공개 주소의 API에는 변경 사항이
+반영되지 않는다.</p>
+<h3>처음부터 끝까지 검증은 프롬프트 없이</h3>
+<p>마지막 검증에는 프롬프트가 없다. 이 검증은 AI에게 시키는 일이 아니라 <strong>사람이
+브라우저에서 직접 진행하는 일</strong>이기 때문이다. 확인 순서는 고객이 예매하는 순서와 같다 — 목록 →
+예매 → 테스트 결제 → QR → DB 저장. 단계마다 무엇을 보면 통과인지는 실습의 통과 신호
+표에 정리해 두었다.</p>
+<h3>약한 지시 → 강한 지시</h3>
+<p>같은 목적이라도 어떻게 말하느냐에 따라 결과가 갈린다. 강한 지시는 조건을 많이 적은
+지시가 아니라, <strong>사람만 아는 결정을 말하고 기준이 되는 파일을 가리키는</strong> 지시다.</p>
+<table>
+<thead>
+<tr>
+<th>흔한(약한) 지시</th>
+<th>고친(강한) 지시</th>
+<th>무엇을 바꿨나</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>배포해줘</td>
+<td>web/ 을 Vercel 프로덕션에 배포하고, 최종 프론트 URL을 알려줘</td>
+<td>무엇을 배포하는지 + 받아야 할 결과(URL) — 기대 결과를 말했다</td>
+</tr>
+<tr>
+<td>화면에 목록이 안 떠, 고쳐줘</td>
+<td>(콘솔의 CORS 에러 원문 붙여넣고) 이 에러가 났어. 원인부터 설명하고, api의 CORS 허용에 배포된 프론트 주소를 추가해줘</td>
+<td>증상만 말하지 말고 근거(에러 원문) 제공 + 고칠 곳(api) 지정</td>
+</tr>
+<tr>
+<td>환경변수 좀 넣어줘</td>
+<td>web/.env.local의 환경변수를 Production에 등록해줘. API 주소는 배포된 주소로 넣어</td>
+<td>필요한 변수는 web/.env.local에 있다 — 그 파일을 지목했다. 사람은 바뀌는 값만 말한다</td>
+</tr>
+<tr>
+<td>CORS 열어줘</td>
+<td>배포된 프론트 주소만 api CORS 허용 출처에 추가하고, 전체 허용(*)은 쓰지 마. 로컬도 유지</td>
+<td>"열어줘"의 범위를 콕 집고 위험한 전체 허용을 차단 — 어디까지 열지는 사람이 긋는 금지선</td>
+</tr>
+<tr>
+<td>잘 되는지 봐줘</td>
+<td>(지시가 아니라 사람의 확인 절차) 공개 주소에서 고객 여정 순서대로 내가 직접 밟고, 마지막에 프로덕션 DB의 orders까지 본다</td>
+<td>막연한 "잘"을 단계별 통과 신호로. 이 검증은 AI에게 맡기지 않는다</td>
+</tr>
+</tbody>
+</table>
+<p>세 가지 실전 감각을 덧붙인다.</p>
+<ul>
+<li><strong>에러가 나면 원문을 그대로 준다.</strong> 배포 구간의 에러(빌드 실패·CORS 차단)는
+  메시지가 원인을 정확히 담고 있는 경우가 많다. "화면이 안 나와요" 대신 콘솔·빌드
+  로그 원문을 붙이면 AI가 훨씬 정확히 짚는다.</li>
+<li><strong>고칠 곳(프론트냐 api냐)을 지시에 박는다.</strong> 이 장 첫머리의 표대로, 주소는 프론트,
+  허용은 api다. 헷갈릴 것 같으면 "이건 api를 고치는 일"이라고 첫 줄에 못 박아 둔다.</li>
+<li><strong>위험한 지름길은 금지선으로 막는다.</strong> "CORS 전체 허용(<code>*</code>)"이나 "시크릿 키를
+  프론트에" 같은 위험한 지름길을 AI가 편의상 제안할 수 있다. "전체 허용은 쓰지
+  마", "시크릿은 여기 넣지 마"를 미리 울타리로 쳐 두면 안전하다.</li>
+</ul>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 가장 흔히 저지르는 약한 지시가 "화면에 아무것도 안 떠요,
+고쳐줘"다. 이럴 때는 "무엇을 붙여야 AI가 고칠 수 있을까?"를 스스로 되물어, 콘솔 에러 원문을
+직접 복사해 붙이는 게 좋다. 에러 원문을 읽고 붙이는 습관이 배포 트러블슈팅의
+8할이다. 첫날 익힌 "원인부터 설명하고 고쳐줘"가 여기서 다시 위력을 발휘한다.</p>
+</blockquote>
+<hr />
+<h2>20.5 실습 — 서비스를 완성한다</h2>
+<p>따라하기는 하나다. 앞에서 정한 네 단계를 그 안에서 차례로 밟는다 — <strong>환경변수 →
+배포 → CORS → 처음부터 끝까지 검증.</strong> 환경변수와 배포는 한 프롬프트로, CORS는 이어서
+한 프롬프트로 시키고, 마지막 검증은 사람이 브라우저에서 직접 진행한다.
+이 실습이 끝나면 공개 주소에서 예매부터 결제까지 진행할 수 있다.</p>
+<h3>따라하기 1 — 프론트엔드를 배포하고 API 서버와 연결한다</h3>
+<p><strong>① 연결하고, 환경변수를 넣고, 배포한다.</strong></p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="web/ 을 Vercel에 연결해줘. 프로젝트를 만들고, web/.env.local의 환경변수를 Production에 등록한 다음 배포해줘.&#10;API 주소는 배포된 주소({배포API URL})로 넣어. 배포가 끝나면 프론트 URL을 알려줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">web/ 을 Vercel에 연결해줘. 프로젝트를 만들고, web/.env.local의 환경변수를 Production에 등록한 다음 배포해줘.</span><span class="pl" style="padding-left:0ch">API 주소는 배포된 주소({배포API URL})로 넣어. 배포가 끝나면 프론트 URL을 알려줘.</span></code></pre></div>
+<p><code>{…}</code> 자리만 API를 배포할 때 메모해 둔 주소로 바꿔 입력한다. 이 값은 빌드할 때 화면 코드 안에
+포함되므로 <strong>배포 전에</strong> 들어가 있어야 한다 — 그래서 등록한 다음 배포하라고 순서를 말했다.</p>
+<p>배포가 도는 동안 Vercel 대시보드에서는 <strong>빌드 로그</strong>가 실시간으로 흐른다.
+"Building..." 상태를 지나 초록불(Ready)이 되면 배포 완료이고, 이때
+<code>https://&lt;프로젝트&gt;.vercel.app</code> 형태의 공개 URL이 나온다. Ready 상태가 되기 전에
+<strong>빌드에서 실패</strong>한다면, 용어 정리에서 말한 "배포 전 최종 점검"에
+걸린 것이다. 빌드 로그 맨 아래에 실패 원인이 찍혀 있으니, 그 원문을 그대로 복사해
+AI에게 주고 "빌드가 이 에러로 실패했어. 원인부터 설명하고 고쳐줘"라고 시킨다.</p>
+<p>프론트 URL이 나오면 그 주소를 한 번 열어 보자. 앞에서 예고한 중간 상태를 직접 볼 수
+있다 — 화면(HTML·CSS)은 멀쩡히 뜨는데 목록 자리만 비어 있고, 개발자 도구(F12)
+콘솔에는 이런 에러가 찍혀 있다.</p>
+<pre><code>Access to fetch at 'https://onticket-api....workers.dev/공연목록경로'
+from origin 'https://&lt;프론트&gt;.vercel.app' has been blocked by CORS policy:
+No 'Access-Control-Allow-Origin' header is present on the requested resource.
+</code></pre>
+<p><strong>"&lt;프론트&gt; 주소에서 API로 보낸 요청이 CORS 정책에 막혔다. 응답에 나(프론트)를
+허용한다는 표시가 없다."</strong> 즉 API가 아직 이 프론트 주소를 허락 목록에 안 넣었다는
+뜻이고, 고칠 곳은 명백히 <strong>api</strong>다. 고장이 아니라 CORS 차례가 왔다는 신호라는 것을
+눈으로 확인해 두면, 다음에 같은 화면을 만나도 당황하지 않는다.</p>
+<p><strong>② 두 앱을 잇는다.</strong></p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="방금 나온 프론트 주소를 api의 CORS 허용 출처에 추가하고 api를 재배포해줘.&#10;로컬(localhost:3000)도 개발용으로 유지하고, 전체 허용(*)은 쓰지 마.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">방금 나온 프론트 주소를 api의 CORS 허용 출처에 추가하고 api를 재배포해줘.</span><span class="pl" style="padding-left:0ch">로컬(localhost:3000)도 개발용으로 유지하고, 전체 허용(*)은 쓰지 마.</span></code></pre></div>
+<p>위 프롬프트를 그대로 복사해 입력하면 된다. 배포를 먼저 하고 이 지시를 나중에 넣는 것은
+순서가 정해져 있기 때문이다 — 프론트의 진짜 주소는 배포를 해 봐야 손에 들어오고, 그
+주소가 있어야 CORS에 넣을 수 있다.</p>
+<p>CORS 설정은 api 코드에 있으므로, 고친 뒤 <strong>api를 재배포</strong>해야 서비스에 반영된다(코드만
+고치고 배포하지 않으면 기존 API는 바뀌지 않는다). 재배포까지 끝나면 프론트 주소를
+새로고침한다. 비어 있던 자리에 리버사이드 재즈를 비롯한 이벤트 목록이 채워지면, 배포된
+두 앱이 인터넷을 통해 정상적으로 통신한다는 뜻이다. 이 순간이 이 장 첫머리에서 말한 "두 앱을
+하나의 서비스로" 잇는 연결이 완성되는 지점이다.</p>
+<p>여기서 한 가지가 남았다. CORS 설정은 <strong>로컬의 api 코드</strong>를 수정해 배포한 것이므로, 원격 저장소에는 아직
+이전 설정이 남아 있다. 저장소의 코드와 배포된 코드가 일치하도록 변경 사항을 올려야 한다. 곧 배포를 자동으로
+돌릴 텐데, 그때 기준은 저장소의 코드다 — 옛 설정이 다시 배포되면 방금 고친 것이 되돌아간다.</p>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="CORS 고친 것 커밋해줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">CORS 고친 것 커밋해줘.</span></code></pre></div>
+<div class="prompt"><div class="prompt-bar"><span class="prompt-lab">프롬프트</span><button class="copy" type="button" data-copy="푸시해줘.">복사</button></div><pre><code><span class="pl" style="padding-left:0ch">푸시해줘.</span></code></pre></div>
+<p><strong>③ 처음부터 끝까지 예매한다.</strong></p>
+<p>이 단계에는 프롬프트가 없다. 공개 프론트 주소에서 <strong>사람이 브라우저로</strong> 예매 과정을
+진행한다. 리버사이드 재즈 → 등급·수량 → 이메일 → 결제(테스트) → 완료 화면 QR,
+그리고 Supabase 프로덕션 DB의 orders에서 방금 주문을 확인한다. 각 단계에서 무엇을
+보면 통과인지 정리하면 이렇다.</p>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>고객의 행동</th>
+<th>통과 신호</th>
+<th>어떤 연결을 증명하나</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>접속</td>
+<td>공개 프론트 URL 열기</td>
+<td>화면이 뜬다</td>
+<td>프론트 배포 성공</td>
+</tr>
+<tr>
+<td>목록</td>
+<td>이벤트 목록 확인</td>
+<td>리버사이드 재즈 등이 보인다</td>
+<td>프론트↔API 주소·CORS 연결</td>
+</tr>
+<tr>
+<td>예매</td>
+<td>등급·수량 선택, 이메일 입력</td>
+<td>주문 단계로 넘어간다</td>
+<td>API 주문 처리</td>
+</tr>
+<tr>
+<td>결제</td>
+<td>테스트 결제 진행</td>
+<td>결제 완료로 넘어간다</td>
+<td>토스(클라이언트 키)↔api(승인)</td>
+</tr>
+<tr>
+<td>완료</td>
+<td>완료 화면 확인</td>
+<td>QR 티켓이 보인다</td>
+<td>예매 전체 마무리</td>
+</tr>
+<tr>
+<td>저장</td>
+<td>Supabase orders 확인</td>
+<td>방금 주문이 실제로 있다</td>
+<td>API↔프로덕션 DB 저장</td>
+</tr>
+</tbody>
+</table>
+<p>마지막 줄이 특히 중요하다. 화면에서 "완료"가 떴다고 끝이 아니라, <strong>그 주문이
+프로덕션 DB(Supabase)의 orders 테이블에 실제로 남았는지</strong>까지 확인해야 진짜
+처음부터 끝까지다. 화면만 성공한 척하고 데이터는 안 남는 경우를 잡아내는 마지막
+관문이다. 방금 예매의 이메일이나 주문번호로 orders에서 찾으면 된다. 이 한 줄까지
+확인되면, 배포된 온티켓에서 예매 과정 전체가 정상적으로 동작함을 확인할 수 있다.</p>
+<h3>완료 기준 체크리스트</h3>
+<ul>
+<li>web이 Vercel 프로젝트에 연결되고, 프로덕션 환경변수(API 주소·클라이언트 키)가 등록되어 있다</li>
+<li>프론트가 공개 URL로 배포되어 있다</li>
+<li>프로덕션 CORS가 프론트 주소를 허용하고, 전체 허용(*)이 아니다</li>
+<li>고친 CORS 설정이 저장소에 올라가 있다</li>
+<li>공개 주소에서 <strong>예매→결제→QR 전체 여정</strong>이 동작한다</li>
+<li>그 주문이 프로덕션 DB에 저장되는 것을 확인했다</li>
+</ul>
+<blockquote class="note">
+<p><strong>[짚고 가기]</strong> 이 체크리스트는 앞에서 정한 네 단계와 맞물린다. "다 됐다" 싶을 때,
+특히 마지막 항목(<strong>주문이 프로덕션 DB에 실제로 저장됐는지</strong>)은 반드시 눈으로
+확인하고 넘어가자. 화면만 성공한 척하고 데이터가 안 남는 경우가 흔한 함정이라,
+이 항목을 건너뛰지 않는 것이 처음부터 끝까지 검증하는 습관의 핵심이다.</p>
+</blockquote>
+<hr />
+<h2>20.6 정리</h2>
+<ul>
+<li>두 앱을 이으면 온티켓은 '프로젝트'에서 '서비스'가 된다. 로컬→배포에서
+  다시 맞출 것은 둘 — <strong>프로덕션 API 주소(환경변수)</strong> 와 <strong>CORS 허용 출처</strong>.
+  주소는 프론트 쪽에서(상대가 어디 있는지), 허용은 api 쪽에서(상대를 믿어도
+  되는지) 고친다 — 고칠 곳을 헷갈리지 않는 것이 배포 트러블슈팅의 절반이다.</li>
+<li><strong>Vercel</strong>은 Next.js를 만든 회사가 운영하는 프론트엔드 호스팅이다. 올릴 때마다
+  <strong>빌드</strong>(브라우저가 빠르게 실행할 형태로 변환)가 돌고, 로컬에서 안 걸리던 오류가
+  여기서 처음 걸리기도 한다. 화면은 Vercel, 서버는 Cloudflare — 온티켓의 두 앱은
+  각자에 맞는 서비스에서 운영된다.</li>
+<li>배포 순서: 프론트 환경변수 → 프론트 배포 → <strong>API CORS에 프론트 주소 허용</strong>
+  → 처음부터 끝까지 검증. 세 번째를 빠뜨리면 화면은 떠도 데이터가 안 온다 —
+  이것은 고장이 아니라 아직 CORS 차례가 안 온 정상적인 중간 상태다.
+  프로덕션이라고 원리는 같다.</li>
+<li><code>NEXT_PUBLIC_</code> 환경변수는 브라우저에 노출된다 — <strong>공개돼도 되는 값만.</strong>
+  시크릿 키는 절대 넣지 않는다(클라이언트/시크릿 키 구분의 연장). 판별법은
+  한 문장 — "이 값이 브라우저 개발자 도구에 보여도 괜찮은가?"</li>
+<li>검증은 조각이 아니라 <strong>처음부터 끝까지</strong> — 공개 주소에서 고객의 실제 여정이
+  배포된 서비스에서 정상적으로 동작하는지 본다. 목록→예매→결제→QR에 더해, 그 주문이 프로덕션
+  DB에 실제로 남았는지까지 확인해야 진짜 완성이다. 그것이 완성의 증명이다.</li>
+</ul>
+<p>온티켓은 이제 공개 주소로 접속할 수 있다. 다만 지금은 <strong>사람이 배포를 지시해
+반영한 상태</strong>다. 코드를 고칠 때마다 사람이 배포 명령을 실행해야 한다.
+다음 장에서는 코드를 push할 때마다 자동으로 배포되도록 설정한다.</p><div class="pager"><a class="prev" href="ch19.html"><span class="lbl">이전</span>19장. API 서버 배포 — Cloudflare Workers</a><a class="next" href="ch21.html"><span class="lbl">다음</span>21장. 배포 자동화 — push하면 자동으로 배포된다</a></div>
+<footer class="foot"><b>TechLead</b><a href="mailto:macro@prag-ai.com">macro@prag-ai.com</a></footer>
+</div><div class="byline"><b>오명운</b> · macro@prag-ai.com</div><script src="assets/app.js"></script></body></html>

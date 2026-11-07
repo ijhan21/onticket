@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 430" font-family="Pretendard, sans-serif">
+  <defs>
+    <marker id="d" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 Z" fill="#8a8f98"/></marker>
+  </defs>
+  <rect width="840" height="430" fill="#ffffff"/>
+
+  <text x="40" y="38" font-size="18" font-weight="700" fill="#0f1419">웹 서비스의 3티어</text>
+  <text x="40" y="60" font-size="12.5" fill="#5b6472">화면은 보여주고, API 서버는 판정하고, 데이터베이스는 보관한다</text>
+
+  <!-- 프론트엔드 -->
+  <rect x="40" y="86" width="760" height="76" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="70" y="119" font-size="16" font-weight="700" fill="#0f1419">프론트엔드</text>
+  <text x="70" y="142" font-size="12.5" fill="#5b6472">보여준다</text>
+  <text x="240" y="119" font-size="14" fill="#0f1419">사용자의 브라우저에 보이는 화면</text>
+  <text x="240" y="142" font-size="12.5" fill="#5b6472">버튼, 목록, 입력창</text>
+
+  <!-- 화살표 1 -->
+  <line x1="120" y1="166" x2="120" y2="200" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#d)"/>
+  <line x1="150" y1="204" x2="150" y2="170" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#d)"/>
+  <text x="176" y="190" font-size="13" fill="#48515e">요청과 응답 <tspan font-weight="700" fill="#0f1419">(API)</tspan></text>
+
+  <!-- API 서버 -->
+  <rect x="40" y="208" width="760" height="76" rx="12" fill="#fff7ed" stroke="#c2410c" stroke-width="1.5"/>
+  <text x="70" y="241" font-size="16" font-weight="700" fill="#c2410c">API 서버</text>
+  <text x="70" y="264" font-size="12.5" fill="#9a3412">판정한다</text>
+  <text x="240" y="241" font-size="14" fill="#0f1419">규칙과 처리</text>
+  <text x="240" y="264" font-size="12.5" fill="#5b6472">"잔여석이 있나?" 판정, 금액 계산, 주문 생성</text>
+
+  <!-- 화살표 2 -->
+  <line x1="120" y1="288" x2="120" y2="322" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#d)"/>
+  <line x1="150" y1="326" x2="150" y2="292" stroke="#8a8f98" stroke-width="1.8" marker-end="url(#d)"/>
+  <text x="176" y="312" font-size="13" fill="#48515e">저장과 조회 <tspan font-weight="700" fill="#0f1419">(SQL)</tspan></text>
+
+  <!-- 데이터베이스 -->
+  <rect x="40" y="330" width="760" height="76" rx="12" fill="#f6f7f9" stroke="#c8ced6" stroke-width="1.5"/>
+  <text x="70" y="363" font-size="16" font-weight="700" fill="#0f1419">데이터베이스</text>
+  <text x="70" y="386" font-size="12.5" fill="#5b6472">보관한다</text>
+  <text x="240" y="363" font-size="14" fill="#0f1419">데이터의 금고</text>
+  <text x="240" y="386" font-size="12.5" fill="#5b6472">이벤트, 티켓, 주문, 회원이 저장되는 곳</text>
+</svg>
