@@ -26,7 +26,7 @@ app.use('*', cors({
   allowHeaders: ['Content-Type', 'X-Admin-Password', 'Authorization'],
 }))
 
-// DB 초기화 미들웨어
+// DB 초기화 미들웨어 (Hyperdrive 우선)
 app.use('*', async (c, next) => {
   const dbUrl = c.env?.HYPERDRIVE?.connectionString || c.env?.DATABASE_URL
   if (dbUrl) {

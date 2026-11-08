@@ -13,6 +13,11 @@ let configuredUrl: string | null = null
 
 export function setDatabaseUrl(url: string) {
   if (url && url !== configuredUrl) {
+    if (sqlInstance) {
+      try {
+        sqlInstance.end({ timeout: 1 }).catch(() => {})
+      } catch {}
+    }
     configuredUrl = url
     sqlInstance = null
   }
@@ -28,19 +33,14 @@ export function getDb(connectionString?: string): postgres.Sql {
     throw new Error('DATABASE_URL is not configured')
   }
 
-  const isHyperdrive = url.includes('hyperdrive') || url.includes('cloudflare') || url.includes('127.0.0.1')
+  const isHyperdrive =
+    url.includes('hyperdrive') || url.includes('cloudflare') || url.includes('127.0.0.1')
 
-  if (!sqlInstance || configuredUrl !== url) {
-    configuredUrl = url
-    sqlInstance = postgres(url, {
-      max: isHyperdrive ? 5 : 10,
-      idle_timeout: isHyperdrive ? 30 : 20,
-      connect_timeout: 10,
-      ssl: isHyperdrive ? false : { rejectUnauthorized: false },
-      fetch_types: false,
-      prepare: false,
-    })
-  }
-
-  return sqlInstance
+  return postgres(url, {
+    max: 1,
+    idle_timeout: 0.1,
+    connect_timeout: 5,
+    ssl: isHyperdrive ? false : { rejectUnauthorized: false },
+    fetch_types: false,
+  })
 }
