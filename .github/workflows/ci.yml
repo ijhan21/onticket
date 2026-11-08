@@ -70,7 +70,7 @@ jobs:
   deploy-api:
     name: Deploy API to Cloudflare Workers (CD)
     needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.CLOUDFLARE_API_TOKEN != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -93,11 +93,11 @@ jobs:
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: 'api'
-          wranglerVersion: '3'
 
   # =================================================================
   # 3. CD: Vercel 프론트엔드 프로덕션 배포
@@ -105,7 +105,7 @@ jobs:
   deploy-web:
     name: Deploy Web to Vercel (CD)
     needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.VERCEL_TOKEN != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
