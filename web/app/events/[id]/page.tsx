@@ -346,6 +346,8 @@ function EventDetailContent({
                             <span className="font-bold text-text">{ticket.grade}</span>
                             {isSoldOut ? (
                               <Badge>매진</Badge>
+                            ) : ticket.is_closing_soon ? (
+                              <Badge>마감 임박</Badge>
                             ) : (
                               <span className="text-caption text-text-muted num">
                                 남은 수량 {ticket.remaining_quantity.toLocaleString("ko-KR")}

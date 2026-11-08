@@ -11,7 +11,7 @@ export function CustomerHeader() {
         href="/orders/lookup"
         className="inline-flex items-center justify-center min-h-[36px] px-3.5 py-1.5 bg-surface-2 text-text border border-border-strong rounded-md text-caption font-medium transition-colors hover:bg-surface-3 cursor-pointer"
       >
-        티켓 확인
+        티켓 조회
       </Link>
     </header>
   );

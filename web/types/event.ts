@@ -7,6 +7,7 @@ export interface TicketType {
   total_quantity: number;
   sold_quantity: number;
   remaining_quantity: number;
+  is_closing_soon: boolean;
 }
 
 export interface EventItem {
@@ -18,6 +19,8 @@ export interface EventItem {
   start_at: string;
   end_at: string;
   sales_status: SalesStatus;
+  is_closing_soon: boolean;
+  is_sold_out?: boolean;
 }
 
 export interface EventDetail extends EventItem {

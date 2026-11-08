@@ -253,7 +253,7 @@ export default function HomePage() {
         {!loading && !error && events.length > 0 && (
           <ul className="list-none m-0 p-0 flex flex-col gap-2">
             {events.map((e) => {
-              const isSoldOut = e.sales_status === "매진";
+              const isSoldOut = e.sales_status === "매진" || Boolean(e.is_sold_out);
               return (
                 <li key={e.event_id}>
                   <Link
@@ -280,7 +280,11 @@ export default function HomePage() {
                       <p className="text-caption text-text-muted">
                         {e.venue} · {e.city}
                       </p>
-                      {isSoldOut && <Badge>매진</Badge>}
+                      {isSoldOut ? (
+                        <Badge>매진</Badge>
+                      ) : e.is_closing_soon ? (
+                        <Badge>마감 임박</Badge>
+                      ) : null}
                     </div>
                   </Link>
                 </li>
