@@ -10,6 +10,7 @@ const eventRouter = new Hono()
 eventRouter.get('/', async (c) => {
   try {
     const result = await getPublicEventList()
+    c.header('Cache-Control', 'public, max-age=5, stale-while-revalidate=30')
     return c.json(result, 200)
   } catch (err) {
     return handleRouteError(c, err)
@@ -23,6 +24,7 @@ eventRouter.get('/:event_id', async (c) => {
   try {
     const eventId = c.req.param('event_id')
     const result = await getEventDetail(eventId)
+    c.header('Cache-Control', 'public, max-age=3, stale-while-revalidate=15')
     return c.json(result, 200)
   } catch (err) {
     return handleRouteError(c, err)

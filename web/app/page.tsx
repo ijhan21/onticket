@@ -79,6 +79,7 @@ export default function HomePage() {
                 <li key={e.event_id}>
                   <Link
                     href={`/events/${encodeURIComponent(e.event_id)}`}
+                    prefetch={false}
                     className="flex gap-3 p-3 bg-surface rounded-md text-text no-underline transition-colors duration-[120ms] hover:bg-surface-3 active:bg-surface-2"
                   >
                     <div

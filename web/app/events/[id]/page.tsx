@@ -13,17 +13,38 @@ import { EventDetail, TicketType } from "@/types/event";
 import { formatDate, formatPrice } from "@/lib/utils/format";
 import { ApiClientError } from "@/types/api";
 
-function EventDetailContent() {
+interface EventDetailContentProps {
+  propEventId?: string;
+  propInitialTt?: string;
+  propInitialQty?: number;
+  propInitialEmail?: string;
+}
+
+function EventDetailContent({
+  propEventId,
+  propInitialTt,
+  propInitialQty,
+  propInitialEmail,
+}: EventDetailContentProps) {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const eventId = String(params.id || "");
+  const eventId = propEventId || String(params?.id || "");
 
   // 재시도 시 URL 쿼리로 넘겨받은 기본값 (D8)
-  const initialTicketTypeId = searchParams.get("tt") || "";
-  const initialQty = parseInt(searchParams.get("qty") || "1", 10);
-  const initialEmail = searchParams.get("email") || "";
+  const initialTicketTypeId =
+    propInitialTt !== undefined
+      ? propInitialTt
+      : searchParams.get("tt") || "";
+  const initialQty =
+    propInitialQty !== undefined
+      ? propInitialQty
+      : parseInt(searchParams.get("qty") || "1", 10);
+  const initialEmail =
+    propInitialEmail !== undefined
+      ? propInitialEmail
+      : searchParams.get("email") || "";
 
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -43,6 +64,7 @@ function EventDetailContent() {
 
   // 공연 데이터 불러오기
   const loadEvent = async () => {
+    if (!eventId) return;
     setLoading(true);
     setErrorMsg(null);
     try {
@@ -67,9 +89,36 @@ function EventDetailContent() {
   };
 
   useEffect(() => {
-    if (eventId) {
-      loadEvent();
-    }
+    let isMounted = true;
+    if (!eventId) return;
+
+    setLoading(true);
+    setErrorMsg(null);
+
+    fetchEventById(eventId)
+      .then((data) => {
+        if (!isMounted) return;
+        setEvent(data);
+        if (data.ticket_types && data.ticket_types.length === 1) {
+          if (data.ticket_types[0].remaining_quantity > 0) {
+            setSelectedTicketTypeId(data.ticket_types[0].ticket_type_id);
+          }
+        }
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        if (err instanceof ApiClientError && err.status === 404) {
+          setErrorMsg("공연을 찾을 수 없어요. 공연 목록에서 다시 골라 주세요.");
+        } else {
+          setErrorMsg("공연 정보를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.");
+        }
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [eventId]);
 
   const selectedTicket = useMemo<TicketType | undefined>(() => {
@@ -415,9 +464,28 @@ function EventDetailContent() {
   );
 }
 
-export default function EventDetailPage() {
+interface EventDetailPageProps {
+  params: { id: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default function EventDetailPage({
+  params,
+  searchParams,
+}: EventDetailPageProps) {
+  const eventId = params?.id || "";
+  const initialTt =
+    typeof searchParams?.tt === "string" ? searchParams.tt : "";
+  const initialQty =
+    typeof searchParams?.qty === "string"
+      ? parseInt(searchParams.qty, 10)
+      : 1;
+  const initialEmail =
+    typeof searchParams?.email === "string" ? searchParams.email : "";
+
   return (
     <Suspense
+      key={eventId}
       fallback={
         <main className="w-full max-w-[var(--layout-content-max)] mx-auto min-h-screen bg-bg border-x border-border flex flex-col p-4">
           <CustomerHeader />
@@ -428,7 +496,13 @@ export default function EventDetailPage() {
         </main>
       }
     >
-      <EventDetailContent />
+      <EventDetailContent
+        key={eventId}
+        propEventId={eventId}
+        propInitialTt={initialTt}
+        propInitialQty={initialQty}
+        propInitialEmail={initialEmail}
+      />
     </Suspense>
   );
 }

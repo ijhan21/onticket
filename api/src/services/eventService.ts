@@ -34,12 +34,13 @@ export async function getPublicEventList() {
 
 export async function getEventDetail(eventId: string) {
   const db = getDb()
-  const event = await findEventById(db, eventId)
+  const [event, ticketTypes] = await Promise.all([
+    findEventById(db, eventId),
+    findTicketTypesByEventId(db, eventId),
+  ])
   if (!event) {
     throw new NotFoundError('EVENT_NOT_FOUND', '공연 정보를 찾을 수 없습니다.')
   }
-
-  const ticketTypes = await findTicketTypesByEventId(db, eventId)
 
   return {
     event_id: event.event_id,

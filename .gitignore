@@ -16,3 +16,4 @@ onticket/
 *.tsbuildinfo
 .vercel
 .env*
+supabase_backup_*.json

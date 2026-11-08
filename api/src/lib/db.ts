@@ -30,22 +30,15 @@ export function getDb(connectionString?: string): postgres.Sql {
 
   const isHyperdrive = url.includes('hyperdrive') || url.includes('cloudflare') || url.includes('127.0.0.1')
 
-  if (isHyperdrive) {
-    return postgres(url, {
-      max: 5,
-      idle_timeout: 0,
-      connect_timeout: 10,
-      ssl: false,
-    })
-  }
-
   if (!sqlInstance || configuredUrl !== url) {
     configuredUrl = url
     sqlInstance = postgres(url, {
-      max: 10,
-      idle_timeout: 20,
+      max: isHyperdrive ? 5 : 10,
+      idle_timeout: isHyperdrive ? 30 : 20,
       connect_timeout: 10,
-      ssl: { rejectUnauthorized: false },
+      ssl: isHyperdrive ? false : { rejectUnauthorized: false },
+      fetch_types: false,
+      prepare: false,
     })
   }
 
