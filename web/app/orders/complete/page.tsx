@@ -12,20 +12,32 @@ import { EventDetail } from "@/types/event";
 import { formatDate, formatPrice } from "@/lib/utils/format";
 import { ApiClientError } from "@/types/api";
 
-function OrderCompleteContent() {
+interface OrderCompleteContentProps {
+  propSearchParams?: { [key: string]: string | string[] | undefined };
+}
+
+function OrderCompleteContent({ propSearchParams }: OrderCompleteContentProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const orderId =
-    searchParams.get("order_id") || searchParams.get("orderId") || "";
-  const paymentKey =
-    searchParams.get("paymentKey") || searchParams.get("payment_key") || "";
-  const eventId = searchParams.get("eid") || "";
-  const email = searchParams.get("email") || "";
-  const amountStr = searchParams.get("amount") || "0";
+  const getParam = (key: string): string => {
+    const val = searchParams.get(key);
+    if (val) return val;
+    const propVal = propSearchParams?.[key];
+    if (typeof propVal === "string") return propVal;
+    if (Array.isArray(propVal) && propVal.length > 0) return propVal[0];
+    return "";
+  };
+
+  const orderId = getParam("order_id") || getParam("orderId");
+  const paymentKey = getParam("paymentKey") || getParam("payment_key");
+  const eventId = getParam("eid");
+  const email = getParam("email");
+  const rawAmount = getParam("amount");
+  const amountStr = rawAmount.split(",")[0].trim() || "0";
   const amount = parseInt(amountStr, 10);
-  const tt = searchParams.get("tt") || "";
-  const qty = searchParams.get("qty") || "1";
+  const tt = getParam("tt");
+  const qty = getParam("qty") || "1";
 
   const [isConfirming, setIsConfirming] = useState<boolean>(true);
   const [orderDetail, setOrderDetail] = useState<OrderLookupResponse | null>(null);
@@ -44,6 +56,8 @@ function OrderCompleteContent() {
     if (hasProcessedRef.current) return;
     hasProcessedRef.current = true;
 
+    let pollingTimer: NodeJS.Timeout | null = null;
+
     async function processOrder() {
       try {
         // 1. 이미 결제완료된 주문인지 먼저 확인 (새로고침 등 대비)
@@ -60,17 +74,42 @@ function OrderCompleteContent() {
           }
         }
 
+        // 공연 정보 사전 조회 (UI용)
+        if (eventId) {
+          fetchEventById(eventId)
+            .then((ev) => setEventDetail(ev))
+            .catch(() => null);
+        }
+
         // 2. 서버 결제 승인 요청 (POST /orders/:order_id/payment)
         try {
-          await confirmPayment(orderId, {
+          const confirmRes = await confirmPayment(orderId, {
             payment_key: paymentKey || `toss_pay_${Date.now()}`,
             payment_method: "카드",
             total_amount: isNaN(amount) || amount <= 0 ? 10000 : amount,
           });
+
+          // 승인 응답의 qr_code로 즉시 상태 세팅하여 무한 대기 방지
+          if (confirmRes && confirmRes.qr_code) {
+            setOrderDetail({
+              order_id: confirmRes.order_id,
+              event_title: eventDetail?.title || "온티켓 공연",
+              venue: eventDetail?.venue ? `${eventDetail.venue} · ${eventDetail.city}` : "공연장",
+              start_at: eventDetail?.start_at || new Date().toISOString(),
+              grade: "지정석",
+              quantity: parseInt(qty, 10) || 1,
+              total_amount: confirmRes.total_amount || amount,
+              status: confirmRes.status || "결제완료",
+              qr_code: confirmRes.qr_code,
+            });
+          }
         } catch (confirmErr: unknown) {
           if (confirmErr instanceof ApiClientError) {
             // 이미 결제 완료된 건은 정상으로 처리 (AC14, AC27)
-            if (confirmErr.code === "ALREADY_PAID") {
+            if (
+              confirmErr.code === "ALREADY_PAID" ||
+              confirmErr.code === "ALREADY_PROCESSED"
+            ) {
               // 성공으로 계속 진행
             } else if (
               confirmErr.code === "SOLD_OUT" ||
@@ -105,19 +144,14 @@ function OrderCompleteContent() {
           }
         }
 
-        // 3. 승인 완료 후 티켓 상세 정보 조회
+        // 3. 승인 완료 후 티켓 상세 정보 조회 및 업데이트
         if (email) {
           try {
             const detail = await lookupOrder(orderId, email);
             setOrderDetail(detail);
           } catch {
-            // lookup 조회 실패 시 eventDetail 로 대체
+            // lookup 조회 지연 시 아래 폴링에서 보완
           }
-        }
-
-        if (eventId) {
-          const ev = await fetchEventById(eventId).catch(() => null);
-          if (ev) setEventDetail(ev);
         }
       } catch (err: unknown) {
         if (err instanceof ApiClientError) {
@@ -156,9 +190,33 @@ function OrderCompleteContent() {
       } finally {
         setIsConfirming(false);
       }
+
+      // 4. 만약 qr_code가 아직 없으면 폴링으로 자동 보완 (최대 5회)
+      if (email) {
+        let attempts = 0;
+        pollingTimer = setInterval(async () => {
+          attempts++;
+          try {
+            const detail = await lookupOrder(orderId, email);
+            if (detail.qr_code) {
+              setOrderDetail(detail);
+              if (pollingTimer) clearInterval(pollingTimer);
+            }
+          } catch {
+            // 폴링 계속
+          }
+          if (attempts >= 5 && pollingTimer) {
+            clearInterval(pollingTimer);
+          }
+        }, 1500);
+      }
     }
 
     processOrder();
+
+    return () => {
+      if (pollingTimer) clearInterval(pollingTimer);
+    };
   }, [orderId, paymentKey, eventId, email, amount, tt, qty, router]);
 
   return (
@@ -234,8 +292,9 @@ function OrderCompleteContent() {
                 </>
               ) : (
                 <div className="py-6 flex flex-col items-center gap-2">
-                  <p className="text-body text-text font-medium">결제를 확인하고 있어요.</p>
-                  <p className="text-caption text-text-muted">승인이 완료되면 QR 코드가 표시됩니다.</p>
+                  <span className="spinner" aria-hidden="true" />
+                  <p className="text-body text-text font-medium">티켓 발급을 마무리하고 있어요.</p>
+                  <p className="text-caption text-text-muted">잠시만 기다려 주시면 QR 코드가 표시됩니다.</p>
                 </div>
               )}
             </div>
@@ -287,9 +346,25 @@ function OrderCompleteContent() {
   );
 }
 
-export default function OrderCompletePage() {
+interface OrderCompletePageProps {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default function OrderCompletePage({ searchParams }: OrderCompletePageProps) {
+  const orderId =
+    typeof searchParams?.order_id === "string"
+      ? searchParams.order_id
+      : typeof searchParams?.orderId === "string"
+      ? searchParams.orderId
+      : "";
+  const paymentKey =
+    typeof searchParams?.paymentKey === "string"
+      ? searchParams.paymentKey
+      : "";
+
   return (
     <Suspense
+      key={`${orderId}-${paymentKey}`}
       fallback={
         <main className="w-full max-w-[var(--layout-content-max)] mx-auto min-h-screen bg-bg border-x border-border flex flex-col p-4">
           <CustomerHeader />
@@ -300,7 +375,7 @@ export default function OrderCompletePage() {
         </main>
       }
     >
-      <OrderCompleteContent />
+      <OrderCompleteContent propSearchParams={searchParams} />
     </Suspense>
   );
 }

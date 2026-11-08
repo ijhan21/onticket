@@ -3,10 +3,24 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-function PayRedirectContent() {
+interface PayRedirectContentProps {
+  propSearchParams?: { [key: string]: string | string[] | undefined };
+}
+
+function PayRedirectContent({ propSearchParams }: PayRedirectContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("order") || searchParams.get("order_id") || "";
+
+  const getParam = (key: string): string => {
+    const val = searchParams.get(key);
+    if (val) return val;
+    const propVal = propSearchParams?.[key];
+    if (typeof propVal === "string") return propVal;
+    if (Array.isArray(propVal) && propVal.length > 0) return propVal[0];
+    return "";
+  };
+
+  const orderId = getParam("order") || getParam("order_id");
 
   useEffect(() => {
     if (orderId) {
@@ -24,10 +38,21 @@ function PayRedirectContent() {
   return null;
 }
 
-export default function PayRedirectPage() {
+interface PayRedirectPageProps {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default function PayRedirectPage({ searchParams }: PayRedirectPageProps) {
+  const orderId =
+    typeof searchParams?.order_id === "string"
+      ? searchParams.order_id
+      : typeof searchParams?.order === "string"
+      ? searchParams.order
+      : "";
+
   return (
-    <Suspense fallback={null}>
-      <PayRedirectContent />
+    <Suspense key={orderId} fallback={null}>
+      <PayRedirectContent propSearchParams={searchParams} />
     </Suspense>
   );
 }

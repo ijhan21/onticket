@@ -99,7 +99,7 @@ function OrderPaymentContent({ propSearchParams }: OrderPaymentContentProps) {
       orderId
     )}&email=${encodeURIComponent(email)}&eid=${encodeURIComponent(
       eventId
-    )}&amount=${totalAmount}&tt=${encodeURIComponent(
+    )}&tt=${encodeURIComponent(
       ticketTypeId
     )}&qty=${quantity}`;
     const failUrl = `${window.location.origin}/orders/fail?order_id=${encodeURIComponent(

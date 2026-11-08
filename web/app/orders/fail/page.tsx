@@ -6,18 +6,30 @@ import { useSearchParams } from "next/navigation";
 import { CustomerHeader } from "@/components/ui/CustomerHeader";
 import { AlertIcon } from "@/components/ui/Icons";
 
-function OrderFailContent() {
+interface OrderFailContentProps {
+  propSearchParams?: { [key: string]: string | string[] | undefined };
+}
+
+function OrderFailContent({ propSearchParams }: OrderFailContentProps) {
   const searchParams = useSearchParams();
 
-  const reason = searchParams.get("reason") || "";
-  const code = searchParams.get("code") || "";
-  const message = searchParams.get("message") || "";
-  const orderId =
-    searchParams.get("order_id") || searchParams.get("orderId") || "";
-  const eventId = searchParams.get("eid") || "";
-  const tt = searchParams.get("tt") || "";
-  const qty = searchParams.get("qty") || "";
-  const email = searchParams.get("email") || "";
+  const getParam = (key: string): string => {
+    const val = searchParams.get(key);
+    if (val) return val;
+    const propVal = propSearchParams?.[key];
+    if (typeof propVal === "string") return propVal;
+    if (Array.isArray(propVal) && propVal.length > 0) return propVal[0];
+    return "";
+  };
+
+  const reason = getParam("reason");
+  const code = getParam("code");
+  const message = getParam("message");
+  const orderId = getParam("order_id") || getParam("orderId");
+  const eventId = getParam("eid");
+  const tt = getParam("tt");
+  const qty = getParam("qty");
+  const email = getParam("email");
 
   // D8: 다시 시도하면 골랐던 등급·수량·이메일을 채운 S02로 이동
   const retryParams = new URLSearchParams();
@@ -99,16 +111,28 @@ function OrderFailContent() {
   );
 }
 
-export default function OrderFailPage() {
+interface OrderFailPageProps {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default function OrderFailPage({ searchParams }: OrderFailPageProps) {
+  const orderId =
+    typeof searchParams?.order_id === "string"
+      ? searchParams.order_id
+      : typeof searchParams?.orderId === "string"
+      ? searchParams.orderId
+      : "";
+
   return (
     <Suspense
+      key={orderId}
       fallback={
         <main className="w-full max-w-[var(--layout-content-max)] mx-auto min-h-screen bg-bg border-x border-border flex flex-col p-4">
           <CustomerHeader />
         </main>
       }
     >
-      <OrderFailContent />
+      <OrderFailContent propSearchParams={searchParams} />
     </Suspense>
   );
 }
