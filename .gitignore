@@ -13,3 +13,4 @@ web/.env
 !web/.env.example
 onticket/
 .playwright-mcp/
+*.tsbuildinfo

@@ -8,6 +8,7 @@
     "build:web": "pnpm --filter web build",
     "build:api": "pnpm --filter api build",
     "build": "pnpm --filter api build && pnpm --filter web build",
+    "typecheck": "pnpm --filter api typecheck && pnpm --filter web typecheck",
     "check:structure": "python3 .claude/skills/architect/scripts/check_structure.py ."
   }
 }
