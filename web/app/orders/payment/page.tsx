@@ -10,17 +10,28 @@ import { fetchEventById } from "@/lib/api-client/events";
 import { EventDetail } from "@/types/event";
 import { formatDate, formatPrice } from "@/lib/utils/format";
 
-function OrderPaymentContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+interface OrderPaymentContentProps {
+  propSearchParams?: { [key: string]: string | string[] | undefined };
+}
 
-  const orderId = searchParams.get("order_id") || "";
-  const eventId = searchParams.get("eid") || "";
-  const ticketTypeId = searchParams.get("tt") || "";
-  const qtyStr = searchParams.get("qty") || "1";
+function OrderPaymentContent({ propSearchParams }: OrderPaymentContentProps) {
+  const router = useRouter();
+  const hookSearchParams = useSearchParams();
+
+  const getParam = (key: string) => {
+    if (propSearchParams && typeof propSearchParams[key] === "string") {
+      return propSearchParams[key] as string;
+    }
+    return hookSearchParams.get(key) || "";
+  };
+
+  const orderId = getParam("order_id");
+  const eventId = getParam("eid");
+  const ticketTypeId = getParam("tt");
+  const qtyStr = getParam("qty") || "1";
   const quantity = parseInt(qtyStr, 10);
-  const email = searchParams.get("email") || "";
-  const amountStr = searchParams.get("amount") || "0";
+  const email = getParam("email");
+  const amountStr = getParam("amount") || "0";
   const totalAmount = parseInt(amountStr, 10);
 
   const [event, setEvent] = useState<EventDetail | null>(null);
@@ -266,16 +277,24 @@ function OrderPaymentContent() {
   );
 }
 
-export default function OrderPaymentPage() {
+interface OrderPaymentPageProps {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default function OrderPaymentPage({ searchParams }: OrderPaymentPageProps) {
+  const orderId =
+    typeof searchParams?.order_id === "string" ? searchParams.order_id : "";
+
   return (
     <Suspense
+      key={orderId}
       fallback={
         <main className="w-full max-w-[var(--layout-content-max)] mx-auto min-h-screen bg-bg border-x border-border flex flex-col p-4">
           <CustomerHeader />
         </main>
       }
     >
-      <OrderPaymentContent />
+      <OrderPaymentContent propSearchParams={searchParams} />
     </Suspense>
   );
 }
