@@ -4,6 +4,7 @@ import { generateEventId, generateTicketTypeId } from '../lib/idGenerator'
 import type { CreateEventInput, UpdateEventInput } from '../schemas/eventSchema'
 import {
   findPublicEvents,
+  findSuggestions,
   findEventById,
   findTicketTypesByEventId,
   findAllEventsWithStats,
@@ -13,9 +14,9 @@ import {
   updateTicketType,
 } from '../repositories/eventRepository'
 
-export async function getPublicEventList() {
+export async function getPublicEventList(query?: string) {
   const db = getDb()
-  const events = await findPublicEvents(db)
+  const events = await findPublicEvents(db, query)
 
   return {
     events: events.map((e) => ({
@@ -29,6 +30,14 @@ export async function getPublicEventList() {
       sales_status: e.sales_status,
       organizer: e.organizer,
     })),
+  }
+}
+
+export async function getEventSuggestions(query: string) {
+  const db = getDb()
+  const suggestions = await findSuggestions(db, query)
+  return {
+    suggestions,
   }
 }
 

@@ -66,8 +66,17 @@
     },
     "/events": {
       "get": {
-        "summary": "판매 가능한 공연 목록 조회 (S01, R1, R24)",
+        "summary": "판매 가능한 공연 목록 및 검색 조회 (S01, R1, R24)",
         "tags": ["고객 서비스 - 공연"],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "공연명, 카테고리, 공연장, 도시 검색어"
+          }
+        ],
         "responses": {
           "200": {
             "description": "공연 목록 반환",
@@ -91,6 +100,48 @@
                           "sales_status": { "type": "string", "example": "판매중" },
                           "organizer": { "type": "string", "example": "(주)승승장구" }
                         }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/suggestions": {
+      "get": {
+        "summary": "공연 실시간 추천 검색어 및 자동완성 목록 조회",
+        "tags": ["고객 서비스 - 공연"],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "추천 검색어 입력 텍스트"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "추천 검색어 목록 반환",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "suggestions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "text": { "type": "string", "example": "뮤지컬 <달빛 극장>" },
+                          "type": { "type": "string", "enum": ["event", "category", "venue"], "example": "event" },
+                          "eventId": { "type": "string", "example": "EV002" },
+                          "subtext": { "type": "string", "example": "뮤지컬 · 블루스퀘어 신한카드홀" }
+                        },
+                        "required": ["text", "type"]
                       }
                     }
                   }

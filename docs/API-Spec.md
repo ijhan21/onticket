@@ -49,15 +49,15 @@
 
 ## 2. 엔드포인트별 명세
 
-### GET /events — 판매 가능한 공연 목록 조회
+### GET /events — 판매 가능한 공연 목록 및 검색 조회
 
-판매상태가 `판매중` 또는 `매진`인 공연 목록을 시작일시 빠른 순으로 조회한다 (`판매종료` 제외).
+판매상태가 `판매중` 또는 `매진`인 공연 목록을 시작일시 빠른 순으로 조회한다 (`판매종료` 제외). `q` 검색어가 주어질 경우 공연 제목, 카테고리, 공연장, 도시에 대해 대소문자 구분 없이 부분 일치하는 공연만 필터링한다.
 
 요청:
 
 | 위치 | 이름 | 자료형 | 필수 | 조건 | ERD 컬럼 |
 |---|---|---|---|---|---|
-| 쿼리 | 없음 | string | 선택 | - | `events.sales_status` |
+| 쿼리 | q | string | 선택 | 공연 검색어 (제목, 카테고리, 공연장, 도시) | `events.title`, `events.category`, `events.venue`, `events.city` |
 
 응답 200:
 
@@ -72,6 +72,34 @@
 | events[].start_at | string | `events.start_at` |
 | events[].end_at | string | `events.end_at` |
 | events[].sales_status | string | `events.sales_status` |
+
+오류:
+
+| 상태코드 | code | 언제 |
+|---|---|---|
+| 500 | INTERNAL_SERVER_ERROR | 서버 내부 오류 발생 시 |
+
+---
+
+### GET /events/suggestions — 공연 검색어 실시간 추천/자동완성
+
+사용자가 입력한 검색어 키워드(`q`)를 기반으로 일치하는 카테고리, 공연명, 공연장을 추천 검색어 목록으로 반환한다.
+
+요청:
+
+| 위치 | 이름 | 자료형 | 필수 | 조건 | ERD 컬럼 |
+|---|---|---|---|---|---|
+| 쿼리 | q | string | 선택 | 추천 검색어 대상 입력 문자열 | `events.title`, `events.category`, `events.venue` |
+
+응답 200:
+
+| 이름 | 자료형 | 출처 |
+|---|---|---|
+| suggestions | array | 추천 목록 |
+| suggestions[].text | string | 추천 검색어 텍스트 (카테고리명, 공연명, 공연장명) |
+| suggestions[].type | string | 항목 유형 (`category`, `event`, `venue`) |
+| suggestions[].eventId | string? | 공연인 경우 공연 식별자 |
+| suggestions[].subtext | string? | 보조 정보 (카테고리, 공연장 설명 등) |
 
 오류:
 

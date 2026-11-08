@@ -1,16 +1,31 @@
 import { Hono } from 'hono'
 import { handleRouteError } from '../lib/http'
-import { getPublicEventList, getEventDetail } from '../services/eventService'
+import { getPublicEventList, getEventDetail, getEventSuggestions } from '../services/eventService'
 
 const eventRouter = new Hono()
 
 /**
- * GET /events — 판매 가능한 공연 목록 조회 (S01, R1, R24)
+ * GET /events — 판매 가능한 공연 목록 및 검색 조회 (S01, R1, R24)
  */
 eventRouter.get('/', async (c) => {
   try {
-    const result = await getPublicEventList()
+    const q = c.req.query('q')
+    const result = await getPublicEventList(q)
     c.header('Cache-Control', 'public, max-age=5, stale-while-revalidate=30')
+    return c.json(result, 200)
+  } catch (err) {
+    return handleRouteError(c, err)
+  }
+})
+
+/**
+ * GET /events/suggestions — 공연 검색어 실시간 추천/자동완성
+ */
+eventRouter.get('/suggestions', async (c) => {
+  try {
+    const q = c.req.query('q') || ''
+    const result = await getEventSuggestions(q)
+    c.header('Cache-Control', 'public, max-age=10, stale-while-revalidate=30')
     return c.json(result, 200)
   } catch (err) {
     return handleRouteError(c, err)

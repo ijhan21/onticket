@@ -37,7 +37,37 @@ export interface AdminEventStatRow {
   total_revenue: number
 }
 
-export async function findPublicEvents(db: postgres.Sql | postgres.TransactionSql): Promise<EventRow[]> {
+export interface EventSuggestion {
+  text: string
+  type: 'event' | 'category' | 'venue'
+  eventId?: string
+  subtext?: string
+}
+
+export async function findPublicEvents(
+  db: postgres.Sql | postgres.TransactionSql,
+  query?: string
+): Promise<EventRow[]> {
+  if (query && query.trim()) {
+    const pattern = `%${query.trim()}%`
+    const rows = await db<EventRow[]>`
+      SELECT 
+        event_id, title, category, venue, city, 
+        start_at, end_at, sales_status, organizer, 
+        created_at, updated_at
+      FROM events
+      WHERE sales_status IN ('판매중', '매진')
+        AND (
+          title ILIKE ${pattern} OR 
+          category ILIKE ${pattern} OR 
+          venue ILIKE ${pattern} OR 
+          city ILIKE ${pattern}
+        )
+      ORDER BY start_at ASC
+    `
+    return rows
+  }
+
   const rows = await db<EventRow[]>`
     SELECT 
       event_id, title, category, venue, city, 
@@ -48,6 +78,77 @@ export async function findPublicEvents(db: postgres.Sql | postgres.TransactionSq
     ORDER BY start_at ASC
   `
   return rows
+}
+
+export async function findSuggestions(
+  db: postgres.Sql | postgres.TransactionSql,
+  query: string
+): Promise<EventSuggestion[]> {
+  const trimmed = query.trim()
+  if (!trimmed) {
+    return []
+  }
+
+  const pattern = `%${trimmed}%`
+  const rows = await db<EventRow[]>`
+    SELECT 
+      event_id, title, category, venue, city, 
+      start_at, end_at, sales_status, organizer, 
+      created_at, updated_at
+    FROM events
+    WHERE sales_status IN ('판매중', '매진')
+      AND (
+        title ILIKE ${pattern} OR 
+        category ILIKE ${pattern} OR 
+        venue ILIKE ${pattern} OR 
+        city ILIKE ${pattern}
+      )
+    ORDER BY start_at ASC
+    LIMIT 10
+  `
+
+  const suggestions: EventSuggestion[] = []
+  const seenTexts = new Set<string>()
+  const lowerQ = trimmed.toLowerCase()
+
+  // 1. 카테고리 매칭
+  for (const row of rows) {
+    if (row.category.toLowerCase().includes(lowerQ) && !seenTexts.has(row.category)) {
+      seenTexts.add(row.category)
+      suggestions.push({
+        text: row.category,
+        type: 'category',
+        subtext: '카테고리',
+      })
+    }
+  }
+
+  // 2. 공연 제목 매칭
+  for (const row of rows) {
+    if (row.title.toLowerCase().includes(lowerQ) && !seenTexts.has(row.title)) {
+      seenTexts.add(row.title)
+      suggestions.push({
+        text: row.title,
+        type: 'event',
+        eventId: row.event_id,
+        subtext: `${row.category} · ${row.venue}`,
+      })
+    }
+  }
+
+  // 3. 공연장 매칭
+  for (const row of rows) {
+    if (row.venue.toLowerCase().includes(lowerQ) && !seenTexts.has(row.venue)) {
+      seenTexts.add(row.venue)
+      suggestions.push({
+        text: row.venue,
+        type: 'venue',
+        subtext: '공연장',
+      })
+    }
+  }
+
+  return suggestions.slice(0, 8)
 }
 
 export async function findEventById(

@@ -24,3 +24,10 @@ export interface EventDetail extends EventItem {
   organizer?: string;
   ticket_types: TicketType[];
 }
+
+export interface EventSuggestion {
+  text: string;
+  type: "event" | "category" | "venue";
+  eventId?: string;
+  subtext?: string;
+}
