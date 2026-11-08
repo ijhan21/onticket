@@ -14,6 +14,9 @@ import {
   updateTicketType,
 } from '../repositories/eventRepository'
 
+export const CLOSING_SOON_MIN_QTY = 1
+export const CLOSING_SOON_MAX_QTY = 5
+
 export async function getPublicEventList(query?: string) {
   const db = getDb()
   const events = await findPublicEvents(db, query)
@@ -28,6 +31,8 @@ export async function getPublicEventList(query?: string) {
       start_at: e.start_at.toISOString(),
       end_at: e.end_at.toISOString(),
       sales_status: e.sales_status,
+      is_sold_out: Boolean(e.is_sold_out),
+      is_closing_soon: Boolean(e.is_closing_soon),
       organizer: e.organizer,
     })),
   }
@@ -50,6 +55,37 @@ export async function getEventDetail(eventId: string) {
 
   const ticketTypes = await findTicketTypesByEventId(db, eventId)
 
+  // 각 등급별 잔여석 및 마감 임박 판정 (서버 독점 계산)
+  const mappedTicketTypes = ticketTypes.map((tt) => {
+    const remaining = tt.total_quantity - tt.sold_quantity
+    const isClosingSoon =
+      remaining >= CLOSING_SOON_MIN_QTY && remaining <= CLOSING_SOON_MAX_QTY
+    return {
+      ticket_type_id: tt.ticket_type_id,
+      event_id: tt.event_id,
+      grade: tt.grade,
+      price: tt.price,
+      total_quantity: tt.total_quantity,
+      sold_quantity: tt.sold_quantity,
+      remaining_quantity: remaining,
+      is_closing_soon: isClosingSoon,
+    }
+  })
+
+  // 공연 전체 잔여석 합계 및 매진 판정 (서버 독점 판정)
+  const totalRemaining = mappedTicketTypes.reduce(
+    (sum, tt) => sum + Math.max(0, tt.remaining_quantity),
+    0
+  )
+  const isAllSoldOut = totalRemaining === 0
+  const isSoldOut = event.sales_status === '매진' || isAllSoldOut
+
+  // 공연 전체 마감 임박 판정: 매진이 아니면서 판매중 상태이고 적어도 1개 등급이 마감 임박인 경우
+  const eventClosingSoon =
+    !isSoldOut &&
+    event.sales_status === '판매중' &&
+    mappedTicketTypes.some((tt) => tt.is_closing_soon)
+
   return {
     event_id: event.event_id,
     title: event.title,
@@ -59,17 +95,10 @@ export async function getEventDetail(eventId: string) {
     start_at: event.start_at.toISOString(),
     end_at: event.end_at.toISOString(),
     sales_status: event.sales_status,
+    is_sold_out: isSoldOut,
+    is_closing_soon: eventClosingSoon,
     organizer: event.organizer,
-    ticket_types: ticketTypes.map((tt) => ({
-      ticket_type_id: tt.ticket_type_id,
-      event_id: tt.event_id,
-      grade: tt.grade,
-      price: tt.price,
-      total_quantity: tt.total_quantity,
-      sold_quantity: tt.sold_quantity,
-      // 서버 독점 계산값: total_quantity - sold_quantity
-      remaining_quantity: tt.total_quantity - tt.sold_quantity,
-    })),
+    ticket_types: mappedTicketTypes,
   }
 }
 

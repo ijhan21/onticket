@@ -14,6 +14,11 @@ export interface EventRow {
   updated_at: Date
 }
 
+export interface PublicEventRow extends EventRow {
+  is_closing_soon: boolean
+  is_sold_out: boolean
+}
+
 export interface TicketTypeRow {
   ticket_type_id: string
   event_id: string
@@ -47,35 +52,77 @@ export interface EventSuggestion {
 export async function findPublicEvents(
   db: postgres.Sql | postgres.TransactionSql,
   query?: string
-): Promise<EventRow[]> {
+): Promise<PublicEventRow[]> {
   if (query && query.trim()) {
     const pattern = `%${query.trim()}%`
-    const rows = await db<EventRow[]>`
+    const rows = await db<PublicEventRow[]>`
       SELECT 
-        event_id, title, category, venue, city, 
-        start_at, end_at, sales_status, organizer, 
-        created_at, updated_at
-      FROM events
-      WHERE sales_status IN ('판매중', '매진')
+        e.event_id, e.title, e.category, e.venue, e.city, 
+        e.start_at, e.end_at, e.sales_status, e.organizer, 
+        e.created_at, e.updated_at,
+        (
+          e.sales_status = '매진' OR NOT EXISTS (
+            SELECT 1 FROM ticket_types tt 
+            WHERE tt.event_id = e.event_id 
+              AND (tt.total_quantity - tt.sold_quantity) > 0
+          )
+        ) AS is_sold_out,
+        (
+          e.sales_status = '판매중'
+          AND EXISTS (
+            SELECT 1 FROM ticket_types tt 
+            WHERE tt.event_id = e.event_id 
+              AND (tt.total_quantity - tt.sold_quantity) > 0
+          )
+          AND EXISTS (
+            SELECT 1 FROM ticket_types tt 
+            WHERE tt.event_id = e.event_id 
+              AND (tt.total_quantity - tt.sold_quantity) >= 1 
+              AND (tt.total_quantity - tt.sold_quantity) <= 5
+          )
+        ) AS is_closing_soon
+      FROM events e
+      WHERE e.sales_status IN ('판매중', '매진')
         AND (
-          title ILIKE ${pattern} OR 
-          category ILIKE ${pattern} OR 
-          venue ILIKE ${pattern} OR 
-          city ILIKE ${pattern}
+          e.title ILIKE ${pattern} OR 
+          e.category ILIKE ${pattern} OR 
+          e.venue ILIKE ${pattern} OR 
+          e.city ILIKE ${pattern}
         )
-      ORDER BY start_at ASC
+      ORDER BY e.start_at ASC
     `
     return rows
   }
 
-  const rows = await db<EventRow[]>`
+  const rows = await db<PublicEventRow[]>`
     SELECT 
-      event_id, title, category, venue, city, 
-      start_at, end_at, sales_status, organizer, 
-      created_at, updated_at
-    FROM events
-    WHERE sales_status IN ('판매중', '매진')
-    ORDER BY start_at ASC
+      e.event_id, e.title, e.category, e.venue, e.city, 
+      e.start_at, e.end_at, e.sales_status, e.organizer, 
+      e.created_at, e.updated_at,
+      (
+        e.sales_status = '매진' OR NOT EXISTS (
+          SELECT 1 FROM ticket_types tt 
+          WHERE tt.event_id = e.event_id 
+            AND (tt.total_quantity - tt.sold_quantity) > 0
+        )
+      ) AS is_sold_out,
+      (
+        e.sales_status = '판매중'
+        AND EXISTS (
+          SELECT 1 FROM ticket_types tt 
+          WHERE tt.event_id = e.event_id 
+            AND (tt.total_quantity - tt.sold_quantity) > 0
+        )
+        AND EXISTS (
+          SELECT 1 FROM ticket_types tt 
+          WHERE tt.event_id = e.event_id 
+            AND (tt.total_quantity - tt.sold_quantity) >= 1 
+            AND (tt.total_quantity - tt.sold_quantity) <= 5
+        )
+      ) AS is_closing_soon
+    FROM events e
+    WHERE e.sales_status IN ('판매중', '매진')
+    ORDER BY e.start_at ASC
   `
   return rows
 }
