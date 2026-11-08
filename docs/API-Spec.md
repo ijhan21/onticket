@@ -1,14 +1,15 @@
 # 온티켓 API 명세
 
-- 버전: 1.0
+- 버전: 1.1
 - 상태: 확정
-- 작성일: 2026-11-07
-- 근거: `docs/PRD.md` (버전 1.1, 확정), `docs/화면기획서.md` (버전 1.0, 확정), `docs/ERD.md` (버전 1.0, 확정)
+- 작성일: 2026-11-08
+- 근거: `docs/PRD.md` (버전 1.2, 확정), `docs/화면기획서.md` (버전 1.1, 확정), `docs/ERD.md` (버전 1.1, 확정)
 
 | 버전 | 날짜 | 바꾼 것 | 결정자 |
 |---|---|---|---|
 | 0.1 | 2026-11-07 | 초안 작성: 고객 및 운영 9개 엔드포인트 도출, 세 방향 대조(PRD·화면기획서·ERD) 반영 | 아키텍트 |
 | 1.0 | 2026-11-07 | 명세 검토 완료에 따른 확정: 5절 미결 사항 아키텍트 결정 반영, 9개 엔드포인트 확정 | 사용자(검토), 아키텍트 |
+| 1.1 | 2026-11-08 | PRD 1.2(R25) 반영: 잔여석 1~5장 마감 임박 판정 필드(is_closing_soon) 추가 | 아키텍트 |
 
 ---
 
@@ -35,8 +36,8 @@
 
 | 메서드 | 경로 | 하는 일 | 근거(PRD R) | 쓰는 화면 |
 |---|---|---|---|---|
-| GET | /events | 판매 가능한 공연 목록 조회 | R1, R24 | S01 공연 목록 |
-| GET | /events/:event_id | 공연 상세 정보 및 등급별 잔여석 조회 | R1, R5, R6 | S02 공연 상세·예매 |
+| GET | /events | 판매 가능한 공연 목록 조회 | R1, R24, R25 | S01 공연 목록 |
+| GET | /events/:event_id | 공연 상세 정보 및 등급별 잔여석 조회 | R1, R5, R6, R25 | S02 공연 상세·예매 |
 | POST | /orders | 비회원 주문 생성 (결제대기 상태) | R1, R6, R20, R22 | S02 공연 상세·예매 |
 | POST | /orders/:order_id/payment | 결제 승인 처리 및 QR 코드 발급 | R1, R7, R8, R22 | S03 결제 완료, S04 결제 실패 |
 | GET | /orders | 주문번호와 이메일로 비회원 티켓 조회 | R7, R21, R22 | S05 티켓 조회 |
@@ -72,6 +73,7 @@
 | events[].start_at | string | `events.start_at` |
 | events[].end_at | string | `events.end_at` |
 | events[].sales_status | string | `events.sales_status` |
+| events[].is_closing_soon | boolean | 계산식: 잔여석이 1~5장인 등급 존재 여부 (R25) |
 
 오류:
 
@@ -132,6 +134,7 @@
 | end_at | string | `events.end_at` |
 | sales_status | string | `events.sales_status` |
 | organizer | string | `events.organizer` |
+| is_closing_soon | boolean | 계산식: 잔여석이 1~5장인 등급 존재 여부 (R25) |
 | ticket_types | array | `ticket_types` 목록 |
 | ticket_types[].ticket_type_id | string | `ticket_types.ticket_type_id` |
 | ticket_types[].grade | string | `ticket_types.grade` |
@@ -139,6 +142,7 @@
 | ticket_types[].total_quantity | number | `ticket_types.total_quantity` |
 | ticket_types[].sold_quantity | number | `ticket_types.sold_quantity` |
 | ticket_types[].remaining_quantity | number | 계산식: `ticket_types.total_quantity - ticket_types.sold_quantity` |
+| ticket_types[].is_closing_soon | boolean | 계산식: remaining_quantity가 1~5장 여부 (R25) |
 
 오류:
 
@@ -407,9 +411,11 @@
 |---|---|---|
 | S01 공연 목록 | 공연 제목, 카테고리, 시작일시, 장소, 도시 | GET /events → events[].title, category, start_at, venue, city |
 | S01 공연 목록 | 매진 표시 | GET /events → events[].sales_status = '매진' |
+| S01 공연 목록 | 마감 임박 표시 | GET /events → events[].is_closing_soon = true |
 | S02 공연 상세·예매 | 공연 상세 정보 (제목, 카테고리, 일시, 장소) | GET /events/:event_id → title, category, start_at, end_at, venue, city |
 | S02 공연 상세·예매 | 등급 목록 (등급명, 가격) | GET /events/:event_id → ticket_types[].grade, price |
 | S02 공연 상세·예매 | 남은 수량 | GET /events/:event_id → ticket_types[].remaining_quantity |
+| S02 공연 상세·예매 | 등급 마감 임박 표시 | GET /events/:event_id → ticket_types[].is_closing_soon = true |
 | S02 공연 상세·예매 | 선택 수량에 따른 결제 금액 | POST /orders → total_amount |
 | S03 결제 완료 | 주문번호, 수량, 결제금액, 주문상태 | POST /orders/:order_id/payment → order_id, total_amount, status |
 | S03 결제 완료 | QR 티켓 표시 | POST /orders/:order_id/payment → qr_code |
@@ -428,6 +434,7 @@
 | 이름 | 계산식 | 계산하는 곳 |
 |---|---|---|
 | remaining_quantity | total_quantity - sold_quantity | 서버 |
+| is_closing_soon | remaining_quantity >= 1 AND remaining_quantity <= 5 | 서버 |
 | total_amount | price * quantity | 서버 |
 | total_revenue | SUM(orders.total_amount) WHERE status IN ('결제완료', '입장완료') | 서버 |
 
@@ -455,3 +462,4 @@
 | D-06 | 비회원 티켓 조회 보안 | 타인의 티켓 무단 조회를 방지하기 위해 `GET /orders` 쿼리 파라미터로 `order_id`와 `purchaser_email` 두 가지를 필수로 요구하고 둘 다 일치해야만 티켓 정보를 응답함 |
 | D-07 | 운영자 API 경로 및 인증 분리 | 운영자 전용 엔드포인트는 모두 `/admin/` 하위로 격리하고, 요청 헤더 `X-Admin-Password` 검증 실패 시 `401 Unauthorized`로 즉시 차단함 |
 | D-08 | 중복 입장 차단 판정 | 현장 QR 확인(`POST /admin/checkins`) 시 이미 `입장완료` 상태인 티켓은 `409 ALREADY_CHECKED_IN`으로 즉시 차단하여 1장으로 다수가 입장하는 부정을 원천 방지함 |
+| D-09 | 마감 임박 판정의 서버 독점 | 클라이언트가 임의로 잔여석을 비교해 마감 임박을 띄우지 않도록 서버가 `is_closing_soon` 불리언 값을 계산하여 제공하고, 프론트엔드는 이 값을 바탕으로 화면에 배지만 표시함 (R25) |
