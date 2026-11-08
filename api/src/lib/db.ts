@@ -6,13 +6,7 @@ let configuredUrl: string | null = null
 export function setDatabaseUrl(url: string) {
   if (url && url !== configuredUrl) {
     configuredUrl = url
-    const isProd = process.env.NODE_ENV === 'production' && !url.includes('localhost')
-    sqlInstance = postgres(url, {
-      max: 10,
-      idle_timeout: 20,
-      connect_timeout: 10,
-      ssl: isProd ? 'require' : { rejectUnauthorized: false },
-    })
+    sqlInstance = null
   }
 }
 
@@ -26,14 +20,24 @@ export function getDb(connectionString?: string): postgres.Sql {
     throw new Error('DATABASE_URL is not configured')
   }
 
-  if (!sqlInstance) {
+  const isHyperdrive = url.includes('hyperdrive') || url.includes('cloudflare') || url.includes('127.0.0.1')
+
+  if (isHyperdrive) {
+    return postgres(url, {
+      max: 5,
+      idle_timeout: 0,
+      connect_timeout: 10,
+      ssl: false,
+    })
+  }
+
+  if (!sqlInstance || configuredUrl !== url) {
     configuredUrl = url
-    const isProd = process.env.NODE_ENV === 'production' && !url.includes('localhost')
     sqlInstance = postgres(url, {
       max: 10,
       idle_timeout: 20,
       connect_timeout: 10,
-      ssl: isProd ? 'require' : { rejectUnauthorized: false },
+      ssl: { rejectUnauthorized: false },
     })
   }
 

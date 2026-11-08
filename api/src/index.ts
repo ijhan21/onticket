@@ -12,21 +12,25 @@ type Bindings = {
   DATABASE_URL?: string
   ADMIN_PASSWORD?: string
   TOSS_SECRET_KEY?: string
+  HYPERDRIVE?: {
+    connectionString: string
+  }
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
 
 // 공통 환경변수 초기화 및 CORS 미들웨어
 app.use('*', async (c, next) => {
-  if (c.env?.DATABASE_URL) {
-    setDatabaseUrl(c.env.DATABASE_URL)
+  const dbUrl = c.env?.HYPERDRIVE?.connectionString || c.env?.DATABASE_URL
+  if (dbUrl) {
+    setDatabaseUrl(dbUrl)
   }
 
-  const allowedOrigin = c.env?.WEB_ORIGIN || 'http://localhost:3000'
+  const allowedOrigin = c.env?.WEB_ORIGIN || '*'
   const corsMiddleware = cors({
     origin: (requestOrigin) => {
-      if (!requestOrigin || requestOrigin === allowedOrigin || requestOrigin === 'http://localhost:3000') {
-        return requestOrigin || allowedOrigin
+      if (allowedOrigin === '*' || !requestOrigin || requestOrigin === allowedOrigin || requestOrigin === 'http://localhost:3000') {
+        return requestOrigin || '*'
       }
       return allowedOrigin
     },
