@@ -1,0 +1,68 @@
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+.num {
+  font-feature-settings: var(--font-numeric);
+}
+
+.price {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-bold);
+  font-feature-settings: var(--font-numeric);
+}
+
+.amount {
+  color: var(--color-accent);
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-bold);
+  font-feature-settings: var(--font-numeric);
+}
+
+.wordmark {
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+.wordmark-dot {
+  color: var(--color-accent);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: var(--space-4);
+  height: var(--space-4);
+  border: var(--focus-width) solid var(--color-border-strong);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin calc(var(--duration-base) * 4) linear infinite;
+  vertical-align: middle;
+}

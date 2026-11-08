@@ -1,0 +1,40 @@
+- generic [active] [ref=f6e1]:
+  - alert [ref=f6e29]
+  - main "S02 공연 상세·예매" [ref=f6e120]:
+    - generic [ref=f6e121]:
+      - link "온티켓." [ref=f6e122] [cursor=pointer]:
+        - /url: /
+      - link "티켓 조회" [ref=f6e123] [cursor=pointer]:
+        - /url: /orders/lookup
+    - generic [ref=f6e125]:
+      - generic [ref=f6e126]:
+        - generic [aria-hidden] [ref=f6e127]: 어린이 뮤지컬 <꼬마 공룡의 모험>
+        - generic [ref=f6e128]:
+          - heading "어린이 뮤지컬 <꼬마 공룡의 모험>" [level=1] [ref=f6e129]
+          - paragraph [ref=f6e130]: 뮤지컬
+          - paragraph [ref=f6e131]: 2026.09.13 (일) 11:00 ~ 2026.09.13 (일) 12:20
+          - paragraph [ref=f6e132]: 세종문화회관 M씨어터 · 서울
+      - region "등급" [ref=f6e133]:
+        - radiogroup [ref=f6e134]:
+          - radio "성인 남은 수량 174 40,000원" [ref=f6e135] [cursor=pointer]:
+            - generic [ref=f6e136]:
+              - generic [ref=f6e137]: 성인
+              - generic [ref=f6e138]: 남은 수량 174
+            - generic [ref=f6e139]: 40,000원
+          - radio "어린이 남은 수량 290 30,000원" [ref=f6e140] [cursor=pointer]:
+            - generic [ref=f6e141]:
+              - generic [ref=f6e142]: 어린이
+              - generic [ref=f6e143]: 남은 수량 290
+            - generic [ref=f6e144]: 30,000원
+      - generic [ref=f6e145]:
+        - generic [ref=f6e146]: 수량
+        - generic [ref=f6e147]:
+          - button "수량 빼기" [disabled] [ref=f6e148]
+          - generic [ref=f6e150]: "1"
+          - button "수량 더하기" [disabled] [ref=f6e151]
+      - generic [ref=f6e154]:
+        - generic [ref=f6e155]: 이메일
+        - textbox "이메일" [ref=f6e156]:
+          - /placeholder: example@example.com
+        - paragraph [ref=f6e157]: 주문번호와 이 이메일로 티켓을 다시 볼 수 있어요.
+    - button "결제하기" [disabled] [ref=f6e159]

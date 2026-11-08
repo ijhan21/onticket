@@ -1,0 +1,43 @@
+- generic [active] [ref=f5e1]:
+  - main "S05 티켓 조회" [ref=f5e2]:
+    - generic [ref=f5e3]:
+      - link "온티켓." [ref=f5e4] [cursor=pointer]:
+        - /url: /
+      - link "티켓 조회" [ref=f5e5] [cursor=pointer]:
+        - /url: /orders/lookup
+    - generic [ref=f5e6]:
+      - generic [ref=f5e7]:
+        - generic [ref=f5e8]:
+          - generic [ref=f5e9]: 주문번호
+          - textbox "주문번호" [ref=f5e10]:
+            - /placeholder: ORD-20261106-0001
+            - text: ORD-20260908-0001
+        - generic [ref=f5e11]:
+          - generic [ref=f5e12]: 예매할 때 입력한 이메일
+          - textbox "예매할 때 입력한 이메일" [ref=f5e13]:
+            - /placeholder: example@example.com
+            - text: jhyoon53@gmail.com
+        - button "티켓 보기" [ref=f5e14] [cursor=pointer]
+      - generic [ref=f5e17]:
+        - generic [ref=f5e18]:
+          - paragraph [ref=f5e23]: OT-0001-F071
+          - paragraph [ref=f5e24]: 공연장 입구에서 이 QR을 보여 주세요.
+          - paragraph [ref=f5e25]: 이 QR 하나로 함께 온 인원이 입장해요.
+        - generic [ref=f5e26]:
+          - term [ref=f5e27]: 주문번호
+          - definition [ref=f5e28]: ORD-20260908-0001
+          - term [ref=f5e29]: 공연
+          - definition [ref=f5e30]: 스탠드업 코미디 나이트
+          - term [ref=f5e31]: 일시
+          - definition [ref=f5e32]: 2026.09.19 (토) 20:00
+          - term [ref=f5e33]: 장소
+          - definition [ref=f5e34]: 대학로 소극장 혜화
+          - term [ref=f5e35]: 등급
+          - definition [ref=f5e36]: 일반
+          - term [ref=f5e37]: 수량
+          - definition [ref=f5e38]: 2장
+          - term [ref=f5e39]: 결제금액
+          - definition [ref=f5e40]: 66,000원
+          - term [ref=f5e41]: 이메일
+          - definition [ref=f5e42]: jhyoon53@gmail.com
+  - alert [ref=f5e15]

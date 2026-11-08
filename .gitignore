@@ -4,5 +4,12 @@ dist/
 .wrangler/
 .env.local
 .env
+.dev.vars
+api/.env
+api/.dev.vars
+web/.env
 !.env.example
-.gemini/
+!api/.env.example
+!web/.env.example
+onticket/
+.playwright-mcp/

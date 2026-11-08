@@ -1,0 +1,60 @@
+- generic [active] [ref=f7e1]:
+  - alert [ref=f7e2]
+  - main "S08 공연 등록·수정" [ref=f7e363]:
+    - generic [ref=f7e364]:
+      - generic [ref=f7e365]:
+        - link "온티켓." [ref=f7e366] [cursor=pointer]:
+          - /url: /admin/events
+        - generic [ref=f7e367]: 운영 서비스
+      - button "나가기" [ref=f7e368] [cursor=pointer]
+    - generic [ref=f7e369]:
+      - heading "공연 등록" [level=1] [ref=f7e370]
+      - generic [ref=f7e371]:
+        - generic [ref=f7e372]:
+          - generic [ref=f7e373]: 제목
+          - textbox "제목" [ref=f7e374]
+        - generic [ref=f7e375]:
+          - generic [ref=f7e376]: 카테고리
+          - textbox "카테고리" [ref=f7e377]
+        - generic [ref=f7e378]:
+          - generic [ref=f7e379]: 판매상태
+          - combobox "판매상태" [ref=f7e380]:
+            - option "판매종료" [selected]
+            - option "판매중"
+            - option "매진"
+        - generic [ref=f7e381]:
+          - generic [ref=f7e382]: 장소
+          - textbox "장소" [ref=f7e383]
+        - generic [ref=f7e384]:
+          - generic [ref=f7e385]: 도시
+          - textbox "도시" [ref=f7e386]
+        - generic [ref=f7e387]:
+          - generic [ref=f7e388]: 시작일시
+          - textbox "시작일시" [ref=f7e389]
+        - generic [ref=f7e390]:
+          - generic [ref=f7e391]: 종료일시
+          - textbox "종료일시" [ref=f7e392]
+      - generic [ref=f7e393]:
+        - heading "등급" [level=2] [ref=f7e394]
+        - generic [ref=f7e396]:
+          - generic [ref=f7e397]:
+            - generic [ref=f7e398]: 등급
+            - textbox "VIP" [ref=f7e399]
+          - generic [ref=f7e400]:
+            - generic [ref=f7e401]: 가격(원)
+            - spinbutton "50000" [ref=f7e402]
+          - generic [ref=f7e403]:
+            - generic [ref=f7e404]: 총수량
+            - spinbutton "100" [ref=f7e405]
+          - generic [ref=f7e406]:
+            - generic [ref=f7e407]: 판매수량
+            - textbox [ref=f7e408]: "-"
+          - generic [ref=f7e409]:
+            - generic [ref=f7e410]: 잔여수량
+            - textbox [ref=f7e411]: "-"
+          - button "줄 빼기" [ref=f7e413] [cursor=pointer]
+        - button "등급 더하기" [ref=f7e415] [cursor=pointer]
+      - generic [ref=f7e416]:
+        - button "저장하기" [ref=f7e417] [cursor=pointer]
+        - link "취소" [ref=f7e418] [cursor=pointer]:
+          - /url: /admin/events

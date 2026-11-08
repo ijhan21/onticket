@@ -1,6 +1,22 @@
 ---
 model: "typesafe/jev-1.14"
-targets: []
+targets:
+  - "onticket/api/src/services/orderService.ts"
+  - "onticket/api/src/services/checkinService.ts"
+  - "onticket/api/src/services/eventService.ts"
+  - "onticket/api/src/routes/admin.ts"
+  - "onticket/api/src/routes/orders.ts"
+  - "onticket/api/src/routes/events.ts"
+  - "onticket/api/src/lib/auth.ts"
+  - "onticket/api/src/lib/db.ts"
+  - "api/src/services/orderService.ts"
+  - "api/src/services/checkinService.ts"
+  - "api/src/services/eventService.ts"
+  - "api/src/routes/admin.ts"
+  - "api/src/routes/orders.ts"
+  - "api/src/routes/events.ts"
+  - "api/src/lib/auth.ts"
+  - "api/src/lib/db.ts"
 ---
 
 # 온티켓(OnTicket) 기획 의도 및 아키텍처 정성 평가 루브릭
@@ -21,9 +37,9 @@ targets: []
 - **예매 조회 및 QR 티켓 발급 정책**:
   - 티켓 조회는 반드시 주문번호(`order_id`)와 구매자 이메일(`purchaser_email`) 두 가지가 모두 일치할 때만 허용된다.
   - 입장용 QR 티켓(`OT-####-XXXX`)은 서버가 결제를 정상 승인한 `결제완료` 주문에만 단 1개 발급되어야 하며, 결제 승인 전(`결제대기`) 또는 `실패` 상태에서는 절대 발급되어서는 안 된다.
-- **현장 입장 무결성**:
-  - 오직 `결제완료` 상태인 주문의 QR 코드만 `정상` 입장 판정을 받아 `입장완료`로 변경될 수 있다.
-  - 이미 `입장완료`이거나 `취소`, `환불`된 티켓의 입장은 엄격히 차단되어야 한다.
+- **현장 입장 무결성 및 타 공연 티켓 차단**:
+  - 오직 `결제완료` 상태인 주문의 QR 코드만 `정상` 입장 판정을 받아 `입장완료`로 변경될 수 있으며 `201 Created`를 반환한다.
+  - 게이트의 공연(`event_id`)과 주문의 공연(`order.event_id`)이 일치해야만 입장이 승인되며, 다른 공연 티켓이나 이미 `입장완료`, `취소`, `환불`된 티켓의 입장은 엄격히 차단되어야 한다.
 
 ---
 
@@ -34,10 +50,12 @@ targets: []
   - 프론트엔드에서 데이터베이스(Supabase/PostgreSQL)에 직접 접속하는 것은 엄격히 금지된다. 프론트엔드는 항상 API 서버(`lib/api-client/`)를 통해서만 데이터를 주고받아야 한다.
 - **클라이언트를 신뢰하지 마라 (Never Trust the Client)**:
   - 결제 금액 계산(`단가 × 수량`), 잔여 좌석 계산(`총수량 - 판매수량`), 매진 판정, 입장 유효성 판정 등 모든 핵심 비즈니스 계산과 판정은 반드시 API 서버가 독점한다.
-  - 클라이언트가 계산한 금액이나 임의의 상태값을 서버가 그대로 수용하거나 신뢰해서는 안 된다.
+  - 클라이언트가 계산한 금액이나 임의의 상태값을 서버가 그대로 수용하거나 신뢰해서는 안 된다. 프론트엔드가 자체적으로 가짜 QR 코드를 생성하거나 표시해서는 안 된다.
 - **운영(Admin) 서비스 격리 및 인증**:
   - 운영 전용 API 및 화면 경로는 `/admin/` 하위에 위치해야 한다.
   - 운영자 기능은 `X-Admin-Password` 헤더(또는 환경변수에 정의된 공유 비밀번호)를 통한 인증이 필수적이며, 미인증 시 `401 Unauthorized`를 반환해야 한다.
+- **비밀값 하드코딩 금지**:
+  - 소스 코드 내에 DB 비밀번호, 관리자 비밀번호, 서비스 키, 결제 시크릿 키가 평문 fallback 등으로 하드코딩되어 있으면 안 된다.
 
 ---
 
@@ -49,6 +67,8 @@ targets: []
   - 주문 당시의 `결제금액(total_amount)`은 향후 티켓 가격 변동과 무관한 역사적 거래 원본이므로 주문 레코드에 반드시 보존한다.
 - **상태값의 표준화 및 일관성**:
   - 상태값은 CSV 데이터 및 기획서에 명시된 한국어 텍스트(`판매중`, `매진`, `판매종료`, `결제대기`, `결제완료`, `입장완료`, `취소`, `환불`, `실패`)를 준수한다.
+- **운영 관리 총수량 축소 방지**:
+  - 공연 수정 시 `total_quantity`는 이미 판매된 `sold_quantity`보다 작게 줄일 수 없으며 위반 시 `400 TOTAL_LESS_THAN_SOLD`로 차단한다.
 - **데이터 파괴 명령 금지**:
   - `DROP TABLE`, `DROP DATABASE`, `TRUNCATE` 등 기존 데이터를 영구 소실시키는 파괴적 명령을 일체 실행하거나 코드에 포함하지 않는다.
 

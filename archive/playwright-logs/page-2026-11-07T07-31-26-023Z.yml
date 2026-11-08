@@ -1,0 +1,8 @@
+- generic [active] [ref=f6e1]:
+  - main "S01 공연 목록" [ref=f6e2]:
+    - generic [ref=f6e3]:
+      - link "온티켓." [ref=f6e4] [cursor=pointer]:
+        - /url: /
+      - link "티켓 조회" [ref=f6e5] [cursor=pointer]:
+        - /url: /orders/lookup
+  - alert [ref=f6e29]

@@ -1,0 +1,49 @@
+- generic [ref=f2e1]:
+  - alert [ref=f2e29]
+  - main "S02 공연 상세·예매" [ref=f2e120]:
+    - generic [ref=f2e121]:
+      - link "온티켓." [ref=f2e122] [cursor=pointer]:
+        - /url: /
+      - link "티켓 조회" [ref=f2e123] [cursor=pointer]:
+        - /url: /orders/lookup
+    - generic [ref=f2e125]:
+      - generic [ref=f2e126]:
+        - generic [aria-hidden] [ref=f2e127]: <모네에서 반 고흐까지> 특별전
+        - generic [ref=f2e128]:
+          - heading "<모네에서 반 고흐까지> 특별전" [level=1] [ref=f2e129]
+          - paragraph [ref=f2e130]: 전시
+          - paragraph [ref=f2e131]: 2026.09.01 (화) 10:00 ~ 2026.11.30 (월) 19:00
+          - paragraph [ref=f2e132]: DDP 뮤지엄 · 서울
+      - region "등급" [ref=f2e133]:
+        - radiogroup [ref=f2e134]:
+          - radio "성인 남은 수량 2,978 20,000원" [checked] [active] [ref=f2e135] [cursor=pointer]:
+            - generic [ref=f2e136]:
+              - generic [ref=f2e137]: 성인
+              - generic [ref=f2e138]: 남은 수량 2,978
+            - generic [ref=f2e139]: 20,000원
+          - radio "청소년 남은 수량 1,476 15,000원" [ref=f2e140] [cursor=pointer]:
+            - generic [ref=f2e141]:
+              - generic [ref=f2e142]: 청소년
+              - generic [ref=f2e143]: 남은 수량 1,476
+            - generic [ref=f2e144]: 15,000원
+          - radio "어린이 남은 수량 986 10,000원" [ref=f2e145] [cursor=pointer]:
+            - generic [ref=f2e146]:
+              - generic [ref=f2e147]: 어린이
+              - generic [ref=f2e148]: 남은 수량 986
+            - generic [ref=f2e149]: 10,000원
+      - generic [ref=f2e150]:
+        - generic [ref=f2e151]: 수량
+        - generic [ref=f2e152]:
+          - button "수량 빼기" [disabled] [ref=f2e153]
+          - generic [ref=f2e155]: "1"
+          - button "수량 더하기" [ref=f2e156] [cursor=pointer]
+      - generic [ref=f2e159]:
+        - generic [ref=f2e160]: 이메일
+        - textbox "이메일" [ref=f2e161]:
+          - /placeholder: example@example.com
+        - paragraph [ref=f2e162]: 주문번호와 이 이메일로 티켓을 다시 볼 수 있어요.
+    - generic [ref=f2e163]:
+      - generic [ref=f2e165]:
+        - generic [ref=f2e166]: 결제금액
+        - generic [ref=f2e167]: 20,000원
+      - button "결제하기" [disabled] [ref=f2e164]

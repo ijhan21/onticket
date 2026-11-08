@@ -1,0 +1,179 @@
+- generic [active] [ref=f4e1]:
+  - alert [ref=f4e17]
+  - main "S07 공연 현황" [ref=f4e19]:
+    - generic [ref=f4e20]:
+      - generic [ref=f4e21]:
+        - link "온티켓." [ref=f4e22] [cursor=pointer]:
+          - /url: /admin/events
+        - generic [ref=f4e23]: 운영 서비스
+      - button "나가기" [ref=f4e24] [cursor=pointer]
+    - generic [ref=f4e25]:
+      - link "공연 등록하기" [ref=f4e27] [cursor=pointer]:
+        - /url: /admin/events/new
+      - table [ref=f4e29]:
+        - rowgroup [ref=f4e30]:
+          - row [ref=f4e31]:
+            - columnheader "제목" [ref=f4e32]
+            - columnheader "시작일시" [ref=f4e33]
+            - columnheader "장소" [ref=f4e34]
+            - columnheader "판매상태" [ref=f4e35]
+            - columnheader "판매 수량" [ref=f4e36]
+            - columnheader "입금액" [ref=f4e37]
+            - columnheader [ref=f4e38]
+        - rowgroup [ref=f4e39]:
+          - row [ref=f4e40]:
+            - cell "<모네에서 반 고흐까지> 특별전" [ref=f4e41]
+            - cell "2026.09.01 (화) 10:00" [ref=f4e42]
+            - cell "-" [ref=f4e43]
+            - cell "판매중" [ref=f4e44]
+            - cell "60장" [ref=f4e45]
+            - cell "840,000원" [ref=f4e46]
+            - cell [ref=f4e47]:
+              - generic [ref=f4e48]:
+                - link "수정하기" [ref=f4e49] [cursor=pointer]:
+                  - /url: /admin/events/EV006/edit
+                - link "입장 확인하기" [ref=f4e50] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV006
+          - row [ref=f4e51]:
+            - cell "인디밴드 합동공연 <골목 라이브 vol.7>" [ref=f4e52]
+            - cell "2026.09.12 (토) 18:00" [ref=f4e53]
+            - cell "-" [ref=f4e54]
+            - cell "판매종료" [ref=f4e55]
+            - cell "36장" [ref=f4e56]
+            - cell "1,749,000원" [ref=f4e57]
+            - cell [ref=f4e58]:
+              - generic [ref=f4e59]:
+                - link "수정하기" [ref=f4e60] [cursor=pointer]:
+                  - /url: /admin/events/EV004/edit
+                - link "입장 확인하기" [ref=f4e61] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV004
+          - row [ref=f4e62]:
+            - cell "어린이 뮤지컬 <꼬마 공룡의 모험>" [ref=f4e63]
+            - cell "2026.09.13 (일) 11:00" [ref=f4e64]
+            - cell "-" [ref=f4e65]
+            - cell "판매중" [ref=f4e66]
+            - cell "40장" [ref=f4e67]
+            - cell "1,480,000원" [ref=f4e68]
+            - cell [ref=f4e69]:
+              - generic [ref=f4e70]:
+                - link "수정하기" [ref=f4e71] [cursor=pointer]:
+                  - /url: /admin/events/EV012/edit
+                - link "입장 확인하기" [ref=f4e72] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV012
+          - row [ref=f4e73]:
+            - cell "AI DevCon 2026" [ref=f4e74]
+            - cell "2026.09.18 (금) 10:00" [ref=f4e75]
+            - cell "-" [ref=f4e76]
+            - cell "판매중" [ref=f4e77]
+            - cell "30장" [ref=f4e78]
+            - cell "2,046,000원" [ref=f4e79]
+            - cell [ref=f4e80]:
+              - generic [ref=f4e81]:
+                - link "수정하기" [ref=f4e82] [cursor=pointer]:
+                  - /url: /admin/events/EV003/edit
+                - link "입장 확인하기" [ref=f4e83] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV003
+          - row [ref=f4e84]:
+            - cell "스탠드업 코미디 나이트" [ref=f4e85]
+            - cell "2026.09.19 (토) 20:00" [ref=f4e86]
+            - cell "-" [ref=f4e87]
+            - cell "판매중" [ref=f4e88]
+            - cell "24장" [ref=f4e89]
+            - cell "792,000원" [ref=f4e90]
+            - cell [ref=f4e91]:
+              - generic [ref=f4e92]:
+                - link "수정하기" [ref=f4e93] [cursor=pointer]:
+                  - /url: /admin/events/EV007/edit
+                - link "입장 확인하기" [ref=f4e94] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV007
+          - row [ref=f4e95]:
+            - 'cell "팬미팅 <온에어: 배우 정시아>" [ref=f4e96]'
+            - cell "2026.09.20 (일) 17:00" [ref=f4e97]
+            - cell "-" [ref=f4e98]
+            - cell "매진" [ref=f4e99]
+            - cell "29장" [ref=f4e100]
+            - cell "2,233,000원" [ref=f4e101]
+            - cell [ref=f4e102]:
+              - generic [ref=f4e103]:
+                - link "수정하기" [ref=f4e104] [cursor=pointer]:
+                  - /url: /admin/events/EV010/edit
+                - link "입장 확인하기" [ref=f4e105] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV010
+          - row [ref=f4e106]:
+            - cell "2026 유하늘 전국투어 콘서트 <파도> - 서울" [ref=f4e107]
+            - cell "2026.09.26 (토) 19:00" [ref=f4e108]
+            - cell "-" [ref=f4e109]
+            - cell "판매중" [ref=f4e110]
+            - cell "50장" [ref=f4e111]
+            - cell "5,588,000원" [ref=f4e112]
+            - cell [ref=f4e113]:
+              - generic [ref=f4e114]:
+                - link "수정하기" [ref=f4e115] [cursor=pointer]:
+                  - /url: /admin/events/EV001/edit
+                - link "입장 확인하기" [ref=f4e116] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV001
+          - row [ref=f4e117]:
+            - cell "2026 스타트업 위크엔드 서울" [ref=f4e118]
+            - cell "2026.09.27 (일) 09:00" [ref=f4e119]
+            - cell "-" [ref=f4e120]
+            - cell "판매중" [ref=f4e121]
+            - cell "20장" [ref=f4e122]
+            - cell "820,000원" [ref=f4e123]
+            - cell [ref=f4e124]:
+              - generic [ref=f4e125]:
+                - link "수정하기" [ref=f4e126] [cursor=pointer]:
+                  - /url: /admin/events/EV008/edit
+                - link "입장 확인하기" [ref=f4e127] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV008
+          - row [ref=f4e128]:
+            - cell "뮤지컬 <달빛 극장>" [ref=f4e129]
+            - cell "2026.10.03 (토) 14:00" [ref=f4e130]
+            - cell "-" [ref=f4e131]
+            - cell "판매중" [ref=f4e132]
+            - cell "55장" [ref=f4e133]
+            - cell "5,870,000원" [ref=f4e134]
+            - cell [ref=f4e135]:
+              - generic [ref=f4e136]:
+                - link "수정하기" [ref=f4e137] [cursor=pointer]:
+                  - /url: /admin/events/EV002/edit
+                - link "입장 확인하기" [ref=f4e138] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV002
+          - row [ref=f4e139]:
+            - cell "김선우 피아노 리사이틀" [ref=f4e140]
+            - cell "2026.10.10 (토) 19:30" [ref=f4e141]
+            - cell "-" [ref=f4e142]
+            - cell "판매중" [ref=f4e143]
+            - cell "24장" [ref=f4e144]
+            - cell "1,860,000원" [ref=f4e145]
+            - cell [ref=f4e146]:
+              - generic [ref=f4e147]:
+                - link "수정하기" [ref=f4e148] [cursor=pointer]:
+                  - /url: /admin/events/EV005/edit
+                - link "입장 확인하기" [ref=f4e149] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV005
+          - row [ref=f4e150]:
+            - cell "재즈 페스티벌 <리버사이드 재즈>" [ref=f4e151]
+            - cell "2026.10.17 (토) 15:00" [ref=f4e152]
+            - cell "-" [ref=f4e153]
+            - cell "판매중" [ref=f4e154]
+            - cell "44장" [ref=f4e155]
+            - cell "6,410,000원" [ref=f4e156]
+            - cell [ref=f4e157]:
+              - generic [ref=f4e158]:
+                - link "수정하기" [ref=f4e159] [cursor=pointer]:
+                  - /url: /admin/events/EV009/edit
+                - link "입장 확인하기" [ref=f4e160] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV009
+          - row [ref=f4e161]:
+            - cell "클래식 갈라 <가을밤의 세레나데>" [ref=f4e162]
+            - cell "2026.10.24 (토) 19:00" [ref=f4e163]
+            - cell "-" [ref=f4e164]
+            - cell "판매중" [ref=f4e165]
+            - cell "29장" [ref=f4e166]
+            - cell "2,080,000원" [ref=f4e167]
+            - cell [ref=f4e168]:
+              - generic [ref=f4e169]:
+                - link "수정하기" [ref=f4e170] [cursor=pointer]:
+                  - /url: /admin/events/EV011/edit
+                - link "입장 확인하기" [ref=f4e171] [cursor=pointer]:
+                  - /url: /admin/checkins?id=EV011

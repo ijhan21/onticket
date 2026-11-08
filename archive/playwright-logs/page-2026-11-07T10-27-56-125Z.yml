@@ -1,0 +1,18 @@
+- generic [active] [ref=f5e1]:
+  - main "S05 티켓 조회" [ref=f5e2]:
+    - generic [ref=f5e3]:
+      - link "온티켓." [ref=f5e4] [cursor=pointer]:
+        - /url: /
+      - link "티켓 조회" [ref=f5e5] [cursor=pointer]:
+        - /url: /orders/lookup
+    - generic [ref=f5e7]:
+      - generic [ref=f5e8]:
+        - generic [ref=f5e9]: 주문번호
+        - textbox "주문번호" [ref=f5e10]:
+          - /placeholder: ORD-20261106-0001
+      - generic [ref=f5e11]:
+        - generic [ref=f5e12]: 예매할 때 입력한 이메일
+        - textbox "예매할 때 입력한 이메일" [ref=f5e13]:
+          - /placeholder: example@example.com
+      - button "티켓 보기" [disabled] [ref=f5e14]
+  - alert [ref=f5e15]

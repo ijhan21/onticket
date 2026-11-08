@@ -1,0 +1,16 @@
+- generic [active] [ref=f6e1]:
+  - alert [ref=f6e2]
+  - main "S09 입장 확인" [ref=f6e171]:
+    - generic [ref=f6e172]:
+      - generic [ref=f6e173]:
+        - link "온티켓." [ref=f6e174] [cursor=pointer]:
+          - /url: /admin/events
+        - generic [ref=f6e175]: 스탠드업 코미디 나이트 · 2026.09.19 (토) 20:00
+      - button "나가기" [ref=f6e176] [cursor=pointer]
+    - generic [ref=f6e177]:
+      - generic [ref=f6e178]:
+        - generic [ref=f6e179]: 게이트
+        - textbox "게이트" [ref=f6e180]:
+          - /placeholder: A게이트
+        - paragraph [ref=f6e181]: 이 기기가 맡은 게이트 이름을 입력해 주세요.
+      - button "확인하기" [disabled] [ref=f6e182]

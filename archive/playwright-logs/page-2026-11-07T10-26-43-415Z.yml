@@ -1,0 +1,22 @@
+- generic [active] [ref=f4e1]:
+  - alert [ref=f4e17]
+  - main "S09 입장 확인" [ref=f4e172]:
+    - generic [ref=f4e173]:
+      - generic [ref=f4e174]:
+        - link "온티켓." [ref=f4e175] [cursor=pointer]:
+          - /url: /admin/events
+        - generic [ref=f4e176]: <모네에서 반 고흐까지> 특별전 · 2026.09.01 (화) 10:00
+      - button "나가기" [ref=f4e177] [cursor=pointer]
+    - generic [ref=f4e184]:
+      - generic [ref=f4e185]:
+        - generic [ref=f4e186]: 게이트 A게이트
+        - button "바꾸기" [ref=f4e187] [cursor=pointer]
+      - generic [ref=f4e188]:
+        - generic "QR 읽기" [ref=f4e189]:
+          - paragraph [ref=f4e193]: 카메라를 쓸 수 없어요. 아래 칸에 티켓 코드를 입력해 주세요.
+        - generic [ref=f4e194]:
+          - generic [ref=f4e195]:
+            - generic [ref=f4e196]: 티켓 코드
+            - textbox "티켓 코드" [ref=f4e197]:
+              - /placeholder: OT-0001-A1B2
+          - button "확인하기" [disabled] [ref=f4e198]

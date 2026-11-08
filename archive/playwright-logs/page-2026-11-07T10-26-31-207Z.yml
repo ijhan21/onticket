@@ -1,0 +1,16 @@
+- generic [active] [ref=f4e1]:
+  - alert [ref=f4e17]
+  - main "S09 입장 확인" [ref=f4e172]:
+    - generic [ref=f4e173]:
+      - generic [ref=f4e174]:
+        - link "온티켓." [ref=f4e175] [cursor=pointer]:
+          - /url: /admin/events
+        - generic [ref=f4e176]: <모네에서 반 고흐까지> 특별전 · 2026.09.01 (화) 10:00
+      - button "나가기" [ref=f4e177] [cursor=pointer]
+    - generic [ref=f4e178]:
+      - generic [ref=f4e179]:
+        - generic [ref=f4e180]: 게이트
+        - textbox "게이트" [ref=f4e181]:
+          - /placeholder: A게이트
+        - paragraph [ref=f4e182]: 이 기기가 맡은 게이트 이름을 입력해 주세요.
+      - button "확인하기" [disabled] [ref=f4e183]
