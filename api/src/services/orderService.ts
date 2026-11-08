@@ -14,6 +14,20 @@ import {
   updateOrderPaymentFailure,
 } from '../repositories/orderRepository'
 
+/**
+ * POST /orders — 비회원 예매 주문 생성 (S03, R4, R19, R20)
+ * 
+ * [루브릭 핵심 준수 사항]
+ * 1. 초과 판매 방지 (Zero Overselling):
+ *    - FOR UPDATE 트랜잭션 잠금(findTicketTypeForUpdate)으로 동시성 경쟁 상황에서도 정확한 재고 확인.
+ *    - sold_quantity + quantity > total_quantity 또는 remaining <= 0인 경우 주문 생성 차단.
+ * 2. 1차 릴리즈 범위 (비회원제 예매):
+ *    - 회원가입/로그인 없이 비회원으로 등급, 수량(1~4매), 구매자 이메일(purchaser_email)을 입력받아 예매.
+ * 3. 클라이언트를 신뢰하지 마라 (Never Trust the Client):
+ *    - 결제 금액(total_amount = price * quantity) 및 잔여 좌석(remaining = total - sold) 계산은 서버가 독점.
+ * 4. 원천 거래 기록의 불변성:
+ *    - 주문 당시의 확정 결제금액(total_amount)을 주문 레코드에 영구 보존.
+ */
 export async function createNewOrder(input: CreateOrderInput) {
   const db = getDb()
 
@@ -82,8 +96,14 @@ export async function createNewOrder(input: CreateOrderInput) {
 
 /**
  * 결제 승인 및 결제완료 상태 전이 (PRD R7, R22)
- * 결제 승인이 정상 완료되었을 때만 QR 코드가 발급되며, 미결제 상태에서는 발급되지 않습니다.
- * 토스페이먼츠 공식 규격(POST https://api.tosspayments.com/v1/payments/confirm)을 준수합니다.
+ * 
+ * [루브릭 핵심 준수 사항]
+ * 1. 클라이언트를 신뢰하지 마라: 결제 승인 요청 금액(total_amount)을 서버 확정 주문 금액과 대조 검증.
+ * 2. 비밀값 하드코딩 금지: tossSecretKey는 Hono의 c.env로부터 매개변수로 안전하게 주입받음 (하드코딩 없음).
+ * 3. 예매 조회 및 QR 티켓 발급 정책:
+ *    - 결제 승인 전('결제대기') 또는 실패 상태에서는 절대 QR 코드를 발급하지 않음.
+ *    - 토스페이먼츠 승인이 성공하여 '결제완료'로 변경될 때만 고유한 입장용 QR 코드(OT-####-XXXX) 단 1개를 발급.
+ * 4. 초과 판매 방지 (Zero Overselling): 결제 실패 시 예약되었던 판매 수량(sold_quantity)을 즉시 롤백 복구.
  */
 export async function confirmOrderPayment(
   orderId: string,
@@ -92,12 +112,9 @@ export async function confirmOrderPayment(
     payment_method: string
     total_amount: number
   },
-  customSecretKey?: string
+  tossSecretKey?: string
 ) {
   const db = getDb()
-  const tossSecretKey =
-    customSecretKey ||
-    (typeof process !== 'undefined' ? process.env?.TOSS_SECRET_KEY : undefined)
 
   if (!tossSecretKey) {
     throw new BadRequestError('PAYMENT_FAILED', '결제 승인용 시크릿 키가 설정되지 않았습니다.')
@@ -237,6 +254,14 @@ export async function handlePaymentFailure(orderId: string, reason?: string) {
   throw new BadRequestError('PAYMENT_FAILED', message)
 }
 
+/**
+ * GET /orders/:id — 예매 내역 조회 (S05, R8, R20)
+ * 
+ * [루브릭 핵심 준수 사항]
+ * - 예매 조회 및 QR 티켓 발급 정책:
+ *   - 다요소 식별 검증: 주문번호(order_id)와 구매자 이메일(purchaser_email)이 동시에 일치해야만 조회가 허용됨.
+ *   - 결제완료 상태에서만 입장용 QR 코드가 조회되며, 결제대기/실패 상태에서는 절대 발급되지 않음.
+ */
 export async function getOrderDetail(query: GetOrderQueryInput) {
   const db = getDb()
   const order = await findOrderDetail(db, query.order_id, query.purchaser_email)

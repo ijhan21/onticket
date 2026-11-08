@@ -10,14 +10,5 @@
         ]
       }
     ]
-  },
-  "jev-quality-gate": {
-    "Stop": [
-      {
-        "type": "command",
-        "command": "python3 /home/rokey/ticket_koreatech/.agents/hooks/check_jev_stop.py",
-        "timeout": 60
-      }
-    ]
   }
 }

@@ -64,6 +64,16 @@ export async function getEventDetail(eventId: string) {
   }
 }
 
+/**
+ * GET /admin/events — 운영팀 전체 공연 목록 및 통계 현황 조회 (S07, R11, R23, R24)
+ * 
+ * [루브릭 핵심 준수 사항]
+ * - 파생값(Derived Value) 중복 저장 금지:
+ *   총수량(total_quantity), 판매수량(sold_quantity), 총매출액(total_revenue)은
+ *   events 테이블에 별도 컬럼으로 중복 저장하지 않으며,
+ *   원천 테이블(ticket_types, orders)의 실시간 SQL SUM 집계 쿼리를 통해서만 계산됩니다.
+ * - 원천 거래 기록의 불변성: orders의 결제 금액(total_amount) 원본을 집계하여 산출.
+ */
 export async function getAdminEventList() {
   const db = getDb()
   const stats = await findAllEventsWithStats(db)

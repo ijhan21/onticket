@@ -1,14 +1,6 @@
 ---
 model: "typesafe/jev-1.14"
 targets:
-  - "onticket/api/src/services/orderService.ts"
-  - "onticket/api/src/services/checkinService.ts"
-  - "onticket/api/src/services/eventService.ts"
-  - "onticket/api/src/routes/admin.ts"
-  - "onticket/api/src/routes/orders.ts"
-  - "onticket/api/src/routes/events.ts"
-  - "onticket/api/src/lib/auth.ts"
-  - "onticket/api/src/lib/db.ts"
   - "api/src/services/orderService.ts"
   - "api/src/services/checkinService.ts"
   - "api/src/services/eventService.ts"

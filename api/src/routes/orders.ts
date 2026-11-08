@@ -88,6 +88,9 @@ orderRouter.post('/:order_id/payment', async (c) => {
     const tossSecretKey =
       c.env?.TOSS_SECRET_KEY ||
       (typeof process !== 'undefined' ? process.env?.TOSS_SECRET_KEY : undefined)
+    if (!tossSecretKey) {
+      return errorResponse(c, 'SERVER_CONFIG_ERROR', '결제 승인용 시크릿 키 환경변수가 설정되지 않았습니다.', 500)
+    }
     const result = await confirmOrderPayment(orderId, parsed.data, tossSecretKey)
     return c.json(result, 200)
   } catch (err) {
