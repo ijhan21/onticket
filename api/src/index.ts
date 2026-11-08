@@ -19,25 +19,20 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-// 공통 환경변수 초기화 및 CORS 미들웨어
+// CORS 설정 (모든 도메인 허용 및 프리플라이트 처리)
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'X-Admin-Password', 'Authorization'],
+}))
+
+// DB 초기화 미들웨어
 app.use('*', async (c, next) => {
   const dbUrl = c.env?.HYPERDRIVE?.connectionString || c.env?.DATABASE_URL
   if (dbUrl) {
     setDatabaseUrl(dbUrl)
   }
-
-  const allowedOrigin = c.env?.WEB_ORIGIN || '*'
-  const corsMiddleware = cors({
-    origin: (requestOrigin) => {
-      if (allowedOrigin === '*' || !requestOrigin || requestOrigin === allowedOrigin || requestOrigin === 'http://localhost:3000') {
-        return requestOrigin || '*'
-      }
-      return allowedOrigin
-    },
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'X-Admin-Password'],
-  })
-  return corsMiddleware(c, next)
+  await next()
 })
 
 // 루트 접속 시 Swagger UI로 자동 리다이렉트
@@ -54,7 +49,15 @@ app.get('/health', (c) => {
 app.get('/ui', swaggerUI({ url: '/openapi.json' }))
 app.get('/swagger', swaggerUI({ url: '/openapi.json' }))
 app.get('/openapi.json', (c) => {
-  return c.json(openApiSpec)
+  const origin = new URL(c.req.url).origin
+  const spec = {
+    ...openApiSpec,
+    servers: [
+      { url: origin, description: '현재 실행 중인 서버' },
+      ...openApiSpec.servers,
+    ],
+  }
+  return c.json(spec)
 })
 
 // 엔드포인트 라우터 마운트

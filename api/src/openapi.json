@@ -7,6 +7,14 @@
   },
   "servers": [
     {
+      "url": "/",
+      "description": "현재 서버 (기본값)"
+    },
+    {
+      "url": "https://onticket-api.reinforcehan.workers.dev",
+      "description": "Cloudflare Workers 프로덕션"
+    },
+    {
       "url": "http://localhost:8787",
       "description": "로컬 개발 서버"
     }
