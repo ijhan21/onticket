@@ -14,3 +14,5 @@ web/.env
 onticket/
 .playwright-mcp/
 *.tsbuildinfo
+.vercel
+.env*

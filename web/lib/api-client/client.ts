@@ -1,13 +1,15 @@
 import { ApiClientError, ApiResponseError } from "@/types/api";
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
+export const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787"
+).replace(/\/$/, "");
 
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = `${API_BASE_URL}${path}`;
   const headers = new Headers(options.headers || {});
 
   if (!headers.has("Content-Type") && options.body) {
