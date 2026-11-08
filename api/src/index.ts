@@ -40,6 +40,11 @@ app.use('*', async (c, next) => {
   return corsMiddleware(c, next)
 })
 
+// 루트 접속 시 Swagger UI로 자동 리다이렉트
+app.get('/', (c) => {
+  return c.redirect('/ui')
+})
+
 // 서버 헬스체크
 app.get('/health', (c) => {
   return c.json({ status: 'ok' })
