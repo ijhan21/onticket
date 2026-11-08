@@ -248,6 +248,20 @@ function OrderPaymentContent({ propSearchParams }: OrderPaymentContentProps) {
           주문이 정상 접수되었습니다. 결제를 진행하면 예매가 확정되고 QR 티켓이 발급됩니다.
         </p>
 
+        {/* 테스트 결제 안내 */}
+        <div className="p-3.5 bg-surface-2 border border-border rounded-md text-caption text-text-muted flex flex-col gap-1.5">
+          <p className="font-bold text-text flex items-center gap-1.5">
+            <span>💡</span>
+            <span>테스트 결제 방법 안내</span>
+          </p>
+          <p className="text-text">
+            토스 결제창이 열리면 <strong className="text-text font-bold underline underline-offset-2">신용·체크카드</strong>를 선택해 주세요.
+          </p>
+          <p className="text-text-muted leading-relaxed">
+            토스페이먼츠 테스트 환경 특성상 기본 선택된 &apos;퀵계좌이체&apos;는 실제 은행망 연동이 되지 않아 &apos;일시적인 오류가 발생했습니다&apos; 메시지가 표시됩니다.
+          </p>
+        </div>
+
         {/* 결제 버튼 및 취소 링크 */}
         <div className="flex flex-col gap-3 pt-2">
           <button

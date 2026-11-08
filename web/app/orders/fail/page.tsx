@@ -91,6 +91,11 @@ function OrderFailContent({ propSearchParams }: OrderFailContentProps) {
           <AlertIcon className="w-6 h-6 flex-none mt-0.5" />
           <span>{titleMessage}</span>
         </p>
+        {message && message !== titleMessage && (
+          <p className="text-caption text-text-muted">
+            사유: {message}
+          </p>
+        )}
 
         <div className="flex flex-col gap-3 items-start">
           <Link
